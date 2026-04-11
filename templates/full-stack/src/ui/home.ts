@@ -1,5 +1,10 @@
 /**
  * UI Component: Home / Login Page
+ *
+ * IMPORTANT: Return body fragments, NOT full HTML documents.
+ * The platform wraps your output in a shell page and extracts <body> content
+ * via regex — any <head>/<style> outside the body will be stripped.
+ * Put <style> inline inside the body fragment.
  */
 
 import { AIHFPlatform } from '@aihf/platform-sdk';
@@ -21,109 +26,100 @@ export async function renderAIHFWorkflowStepUI(
   }
 
   const html = `
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>${appName}</title>
-  <style>
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      min-height: 100vh;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-    .container {
-      background: white;
-      border-radius: 16px;
-      padding: 48px;
-      width: 100%;
-      max-width: 400px;
-      box-shadow: 0 20px 60px rgba(0,0,0,0.3);
-      text-align: center;
-    }
-    h1 { font-size: 32px; margin-bottom: 8px; color: #1f2937; }
-    .subtitle { color: #6b7280; margin-bottom: 32px; }
-    .form-group { margin-bottom: 16px; text-align: left; }
-    label { display: block; margin-bottom: 8px; font-weight: 500; }
-    input {
-      width: 100%;
-      padding: 14px;
-      border: 2px solid #e5e7eb;
-      border-radius: 8px;
-      font-size: 16px;
-    }
-    input:focus { outline: none; border-color: #667eea; }
-    button {
-      width: 100%;
-      padding: 14px;
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      color: white;
-      border: none;
-      border-radius: 8px;
-      font-size: 16px;
-      font-weight: 600;
-      cursor: pointer;
-      margin-top: 8px;
-    }
-    button:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(102,126,234,0.4); }
-    button:disabled { opacity: 0.6; transform: none; cursor: not-allowed; }
-    .message { margin-top: 16px; padding: 12px; border-radius: 8px; }
-    .success { background: #dcfce7; color: #166534; }
-    .error { background: #fee2e2; color: #991b1b; }
-  </style>
-</head>
-<body>
-  <div class="container">
-    <h1>${appName}</h1>
-    <p class="subtitle">Enter your email to get started</p>
-    <form id="loginForm">
-      <div class="form-group">
-        <label for="email">Email Address</label>
-        <input type="email" id="email" name="email" required placeholder="you@example.com">
-      </div>
-      <button type="submit" id="submitBtn">Send Login Link</button>
-    </form>
-    <div id="message" class="message" style="display: none;"></div>
-  </div>
-  <script>
-    document.getElementById('loginForm').addEventListener('submit', async (e) => {
-      e.preventDefault();
-      const btn = document.getElementById('submitBtn');
-      const msg = document.getElementById('message');
-      const email = document.getElementById('email').value;
+<style>
+  .fs-login * { box-sizing: border-box; }
+  .fs-login {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    max-width: 400px;
+    margin: 60px auto;
+    padding: 48px;
+    background: white;
+    border-radius: 16px;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.1);
+    text-align: center;
+  }
+  .fs-login h1 { font-size: 32px; margin: 0 0 8px; color: #1f2937; }
+  .fs-login .subtitle { color: #6b7280; margin: 0 0 32px; }
+  .fs-login .form-group { margin-bottom: 16px; text-align: left; }
+  .fs-login label { display: block; margin-bottom: 8px; font-weight: 500; }
+  .fs-login input {
+    width: 100%;
+    padding: 14px;
+    border: 2px solid #e5e7eb;
+    border-radius: 8px;
+    font-size: 16px;
+    box-sizing: border-box;
+  }
+  .fs-login input:focus { outline: none; border-color: #667eea; }
+  .fs-login button {
+    width: 100%;
+    padding: 14px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    margin-top: 8px;
+  }
+  .fs-login button:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(102,126,234,0.4); }
+  .fs-login button:disabled { opacity: 0.6; transform: none; cursor: not-allowed; }
+  .fs-login .message { margin-top: 16px; padding: 12px; border-radius: 8px; display: none; }
+  .fs-login .success { background: #dcfce7; color: #166534; }
+  .fs-login .error { background: #fee2e2; color: #991b1b; }
+</style>
 
-      btn.disabled = true;
-      btn.textContent = 'Sending...';
-      msg.style.display = 'none';
+<div class="fs-login">
+  <h1>${appName}</h1>
+  <p class="subtitle">Enter your email to get started</p>
+  <form id="fsLoginForm">
+    <div class="form-group">
+      <label for="fsEmail">Email Address</label>
+      <input type="email" id="fsEmail" name="email" required placeholder="you@example.com">
+    </div>
+    <button type="submit" id="fsSubmitBtn">Send Login Link</button>
+  </form>
+  <div id="fsMessage" class="message"></div>
+</div>
 
-      try {
-        const res = await fetch('/login', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ email })
-        });
-        const result = await res.json();
-        msg.style.display = 'block';
-        msg.className = result.success ? 'message success' : 'message error';
-        msg.textContent = result.message || result.error;
-        if (result.success) btn.textContent = 'Check your email!';
-        else { btn.disabled = false; btn.textContent = 'Send Login Link'; }
-      } catch {
-        msg.style.display = 'block';
-        msg.className = 'message error';
-        msg.textContent = 'Network error';
-        btn.disabled = false;
-        btn.textContent = 'Send Login Link';
-      }
-    });
-  </script>
-</body>
-</html>
+<script>
+(function() {
+  document.getElementById('fsLoginForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    var btn = document.getElementById('fsSubmitBtn');
+    var msg = document.getElementById('fsMessage');
+    var email = document.getElementById('fsEmail').value;
+
+    btn.disabled = true;
+    btn.textContent = 'Sending...';
+    msg.style.display = 'none';
+
+    try {
+      var res = await fetch('/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: email,
+          taskId: window.AIHF_TASK_ID || ''
+        })
+      });
+      var result = await res.json();
+      msg.style.display = 'block';
+      msg.className = result.success ? 'message success' : 'message error';
+      msg.textContent = result.message || result.error;
+      if (result.success) btn.textContent = 'Check your email!';
+      else { btn.disabled = false; btn.textContent = 'Send Login Link'; }
+    } catch (err) {
+      msg.style.display = 'block';
+      msg.className = 'message error';
+      msg.textContent = 'Network error';
+      btn.disabled = false;
+      btn.textContent = 'Send Login Link';
+    }
+  });
+})();
+</script>
   `;
 
   return new Response(html, { headers: { 'Content-Type': 'text/html' } });

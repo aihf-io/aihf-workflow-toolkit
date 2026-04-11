@@ -1,6 +1,10 @@
 /**
  * API Handler: Login
  * Sends magic link for authentication
+ *
+ * createMagicLink() signature:
+ *   sdk.auth.createMagicLink({ entityId, workflowName, workflowVersion, stepId, queryParams? })
+ *   Returns: Promise<string | null>  (the magic link URI, e.g. "/magic?token=...")
  */
 
 import { AIHFPlatform } from '@aihf/platform-sdk';
@@ -23,26 +27,39 @@ export async function invokedByAIHF(
   }
 
   // Check if user exists by email (using username lookup)
-  const existingUser = await sdk.entities.findByUsername(input.email);
+  let user = await sdk.entities.findByUsername(input.email);
 
-  if (!existingUser) {
+  if (!user) {
     // Create new entity for this email
-    await sdk.entities.createEntity({
+    user = await sdk.entities.createEntity({
       email: input.email,
       profile: { type: 'human' }
     });
   }
 
-  // Create magic link
-  const magicLink = await sdk.auth.createMagicLink({
-    email: input.email,
-    redirectUrl: '/dashboard',
-    expiresInMinutes: 60
+  // Create magic link — targets the "dashboard" step of this workflow
+  // Returns a URI string like "/magic?token=..." or null on failure
+  const magicLinkUri = await sdk.auth.createMagicLink({
+    entityId: user.entity_id,
+    workflowName,
+    workflowVersion,
+    stepId: 'dashboard',
   });
 
-  // Send email
+  if (!magicLinkUri) {
+    return new Response(JSON.stringify({
+      success: false,
+      error: 'Failed to create login link. Please try again.'
+    }), { status: 500, headers: { 'Content-Type': 'application/json' } });
+  }
+
+  // Send email with magic link
   const config = await sdk.workflows.getWorkflowConfigHelper(workflowName, workflowVersion);
   const appName = config.getString('app_name', 'My App');
+
+  // Build the full URL — the platform host is available from the request context
+  // In production, use your actual app domain
+  const magicLinkUrl = magicLinkUri;
 
   await sdk.emails.send({
     to: input.email,
@@ -50,12 +67,12 @@ export async function invokedByAIHF(
     bodyHtml: `
       <h1>Login to ${appName}</h1>
       <p>Click the link below to log in:</p>
-      <a href="${magicLink.url}" style="display:inline-block;padding:12px 24px;background:#3b82f6;color:white;text-decoration:none;border-radius:8px;">
+      <a href="${magicLinkUrl}" style="display:inline-block;padding:12px 24px;background:#3b82f6;color:white;text-decoration:none;border-radius:8px;">
         Log In
       </a>
-      <p><small>This link expires in 1 hour.</small></p>
+      <p><small>This link is single-use and will expire after your session idle timeout.</small></p>
     `,
-    bodyText: `Login to ${appName}: ${magicLink.url}`
+    bodyText: `Login to ${appName}: ${magicLinkUrl}`
   });
 
   return new Response(JSON.stringify({

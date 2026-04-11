@@ -3,6 +3,9 @@ version: 1
 
 # Full-stack workflow template
 # Complete workflow with authentication, database, and multi-step flow
+#
+# IMPORTANT: Condition variables referenced in workflow.yaml (e.g., "action")
+# must be declared as output parameters on at least one API route per step.
 
 steps:
   # Landing / Login page
@@ -18,6 +21,8 @@ steps:
           - name: 'email'
             type: 'string'
         output:
+          - name: 'action'
+            type: 'string'
           - name: 'success'
             type: 'boolean'
 
@@ -32,6 +37,8 @@ steps:
           - name: 'token'
             type: 'string'
         output:
+          - name: 'action'
+            type: 'string'
           - name: 'verified'
             type: 'boolean'
 
@@ -46,7 +53,7 @@ steps:
         file: 'api/get-data.ts'
         output:
           - name: 'items'
-            type: 'array'
+            type: 'string'
       - route_match: '/create'
         file: 'api/create-item.ts'
         input:
@@ -55,5 +62,14 @@ steps:
           - name: 'content'
             type: 'string'
         output:
+          - name: 'action'
+            type: 'string'
           - name: 'item'
-            type: 'object'
+            type: 'string'
+
+  # Terminator step — needed in bundle.yaml even though it has no handlers
+  - id: "complete"
+    route: '/complete'
+    domain: 'app'
+    ui:
+      dynamic: 'ui/home.ts'

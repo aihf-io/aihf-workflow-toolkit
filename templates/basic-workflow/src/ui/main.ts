@@ -1,6 +1,11 @@
 /**
  * UI Component: Main Page
  * Simple form with message input
+ *
+ * IMPORTANT: Return body fragments, NOT full HTML documents.
+ * The platform wraps your output in a shell page and extracts <body> content
+ * via regex — any <head>/<style> outside the body will be stripped.
+ * Put <style> inline inside the body fragment.
  */
 
 import { AIHFPlatform } from '@aihf/platform-sdk';
@@ -17,135 +22,124 @@ export async function renderAIHFWorkflowStepUI(
   const primaryColor = config.getString('branding.primary_color', '#3b82f6');
 
   const html = `
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>${appName}</title>
-  <style>
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-      background: #f9fafb;
-      min-height: 100vh;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      padding: 20px;
-    }
-    .container {
-      background: white;
-      border-radius: 12px;
-      padding: 32px;
-      width: 100%;
-      max-width: 400px;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-    }
-    h1 {
-      font-size: 24px;
-      color: #1f2937;
-      margin-bottom: 24px;
-      text-align: center;
-    }
-    .form-group { margin-bottom: 16px; }
-    label {
-      display: block;
-      margin-bottom: 8px;
-      font-weight: 500;
-      color: #374151;
-    }
-    input, textarea {
-      width: 100%;
-      padding: 12px;
-      border: 2px solid #e5e7eb;
-      border-radius: 8px;
-      font-size: 16px;
-    }
-    input:focus, textarea:focus {
-      outline: none;
-      border-color: ${primaryColor};
-    }
-    button {
-      width: 100%;
-      padding: 14px;
-      background: ${primaryColor};
-      color: white;
-      border: none;
-      border-radius: 8px;
-      font-size: 16px;
-      font-weight: 500;
-      cursor: pointer;
-    }
-    button:hover { opacity: 0.9; }
-    button:disabled { opacity: 0.5; cursor: not-allowed; }
-    .response {
-      margin-top: 16px;
-      padding: 16px;
-      background: #f0fdf4;
-      border-radius: 8px;
-      color: #166534;
-      display: none;
-    }
-    .response.visible { display: block; }
-    .error {
-      background: #fef2f2;
-      color: #991b1b;
-    }
-  </style>
-</head>
-<body>
-  <div class="container">
-    <h1>${appName}</h1>
-    <form id="mainForm">
-      <div class="form-group">
-        <label for="message">Your Message</label>
-        <input type="text" id="message" name="message" placeholder="Enter a message..." required>
-      </div>
-      <button type="submit" id="submitBtn">Submit</button>
-    </form>
-    <div class="response" id="response"></div>
-  </div>
+<style>
+  .bw-wrap * { box-sizing: border-box; }
+  .bw-wrap {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    max-width: 400px;
+    margin: 40px auto;
+    padding: 32px;
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  }
+  .bw-wrap h1 {
+    font-size: 24px;
+    color: #1f2937;
+    margin: 0 0 24px;
+    text-align: center;
+  }
+  .bw-form-group { margin-bottom: 16px; }
+  .bw-form-group label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 500;
+    color: #374151;
+  }
+  .bw-form-group input {
+    width: 100%;
+    padding: 12px;
+    border: 2px solid #e5e7eb;
+    border-radius: 8px;
+    font-size: 16px;
+    box-sizing: border-box;
+  }
+  .bw-form-group input:focus {
+    outline: none;
+    border-color: ${primaryColor};
+  }
+  .bw-submit {
+    width: 100%;
+    padding: 14px;
+    background: ${primaryColor};
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 16px;
+    font-weight: 500;
+    cursor: pointer;
+  }
+  .bw-submit:hover { opacity: 0.9; }
+  .bw-submit:disabled { opacity: 0.5; cursor: not-allowed; }
+  .bw-response {
+    margin-top: 16px;
+    padding: 16px;
+    background: #f0fdf4;
+    border-radius: 8px;
+    color: #166534;
+    display: none;
+  }
+  .bw-response.visible { display: block; }
+  .bw-response.error {
+    background: #fef2f2;
+    color: #991b1b;
+  }
+</style>
 
-  <script>
-    document.getElementById('mainForm').addEventListener('submit', async (e) => {
-      e.preventDefault();
+<div class="bw-wrap">
+  <h1>${appName}</h1>
+  <form id="bwMainForm">
+    <div class="bw-form-group">
+      <label for="bwMessage">Your Message</label>
+      <input type="text" id="bwMessage" name="message" placeholder="Enter a message..." required>
+    </div>
+    <button type="submit" class="bw-submit" id="bwSubmitBtn">Submit</button>
+  </form>
+  <div class="bw-response" id="bwResponse"></div>
+</div>
 
-      const btn = document.getElementById('submitBtn');
-      const response = document.getElementById('response');
-      const message = document.getElementById('message').value;
+<script>
+(function() {
+  document.getElementById('bwMainForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
 
-      btn.disabled = true;
-      btn.textContent = 'Submitting...';
-      response.classList.remove('visible', 'error');
+    var btn = document.getElementById('bwSubmitBtn');
+    var response = document.getElementById('bwResponse');
+    var message = document.getElementById('bwMessage').value;
 
-      try {
-        const res = await fetch('/submit', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ message })
-        });
+    btn.disabled = true;
+    btn.textContent = 'Submitting...';
+    response.classList.remove('visible', 'error');
 
-        const result = await res.json();
+    try {
+      var res = await fetch('/submit', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          message: message,
+          taskId: window.AIHF_TASK_ID || ''
+        })
+      });
 
-        response.classList.add('visible');
-        if (result.success) {
-          response.textContent = result.response;
-        } else {
-          response.classList.add('error');
-          response.textContent = result.error || 'Something went wrong';
-        }
-      } catch (error) {
-        response.classList.add('visible', 'error');
-        response.textContent = 'Network error. Please try again.';
-      } finally {
-        btn.disabled = false;
-        btn.textContent = 'Submit';
+      var result = await res.json();
+
+      response.classList.add('visible');
+      if (result.success) {
+        response.textContent = result.response;
+      } else {
+        response.classList.add('error');
+        response.textContent = result.error || 'Something went wrong';
       }
-    });
-  </script>
-</body>
-</html>
+    } catch (error) {
+      response.classList.add('visible', 'error');
+      response.textContent = 'Network error. Please try again.';
+    } finally {
+      btn.disabled = false;
+      btn.textContent = 'Submit';
+    }
+  });
+})();
+</script>
   `;
 
   return new Response(html, {

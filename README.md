@@ -32,7 +32,7 @@ AIHF.io (**AI-Human Framework**) creates workflows where AI handles the routine 
 │   └─────────────────┘         └─────────────┘       └─────────────┘ │
 │         app domain               work domain          work domain    │
 │                                                                      │
-│   Built-in: Auth · Payments · Database · Files · Email · Utilities  │
+│   Built-in: Auth · Payments · Database · Files · Email · Containers · Utilities  │
 └─────────────────────────────────────────────────────────────────────┘
 ```
 
@@ -364,6 +364,16 @@ sdk.utilities.ui.documentEditor(options)            // UI fragments
 
 // Email
 sdk.emails.send({ to, subject, bodyHtml })
+
+// Containers (sandboxed compute — Jupyter, Python, Node.js)
+sdk.containers.launch(config)                    // Launch container session
+sdk.containers.writeFiles(sessionId, files)      // Write files into container
+sdk.containers.installRequirements(sessionId, cfg) // Install Python packages
+sdk.containers.signalReady(sessionId)            // Start app (e.g. Jupyter)
+sdk.containers.execute(sessionId, code)          // Execute code on kernel
+sdk.containers.getOutput(sessionId, cursor)      // Poll kernel output
+sdk.containers.status(sessionId)                 // Container lifecycle status
+sdk.containers.stop(sessionId)                   // Stop and clean up
 ```
 
 ---
@@ -397,6 +407,8 @@ sdk.emails.send({ to, subject, bodyHtml })
 | [AI Workers](./docs/AI_WORKERS.md) | Work domain automation and the AI Worker Service |
 | [Prompt Evaluation](./docs/PROMPT_EVAL.md) | Test and tune AI instruction prompts before deployment |
 | [Utilities](./docs/UTILITIES.md) | PDF, Excel, Word, and image processing |
+| [Custom Landing Pages](./docs/CUSTOM_LANDING_PAGES.md) | Tenant-specific App Portal landing pages |
+| [Containers](./docs/CONTAINERS.md) | Sandboxed Jupyter, Python, and Node.js compute environments |
 
 ---
 
@@ -791,12 +803,12 @@ aihf compile-suite .                         # Compile all
                             ▼
 ┌─────────────────────────────────────────────────────────────┐
 │                    AIHF.io Platform                          │
-│  ┌──────────┐ ┌──────────┐ ┌──────────┐ ┌──────────┐        │
-│  │ Gateway  │ │ AI Worker│ │ Database │ │ Storage  │        │
-│  │ (routing)│ │ Service  │ │   (D1)   │ │   (R2)   │        │
-│  ├──────────┤ ├──────────┤ ├──────────┤ ├──────────┤        │
-│  │ Auth     │ │ Claude   │ │ Stripe   │ │ Email    │        │
-│  └──────────┘ └──────────┘ └──────────┘ └──────────┘        │
+│  ┌──────────┐ ┌──────────┐ ┌──────────┐ ┌──────────┐ ┌──────────┐ │
+│  │ Gateway  │ │ AI Worker│ │Container │ │ Database │ │ Storage  │ │
+│  │ (routing)│ │ Service  │ │ Service  │ │   (D1)   │ │   (R2)   │ │
+│  ├──────────┤ ├──────────┤ ├──────────┤ ├──────────┤ ├──────────┤ │
+│  │ Auth     │ │ Claude   │ │ Jupyter  │ │ Stripe   │ │ Email    │ │
+│  └──────────┘ └──────────┘ └──────────┘ └──────────┘ └──────────┘ │
 └─────────────────────────────────────────────────────────────┘
 ```
 

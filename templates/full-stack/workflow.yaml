@@ -1,0 +1,79 @@
+name: "full-stack-workflow"
+metadata:
+  title: "Full Stack Workflow"
+  version: 1
+  description: "Complete workflow with authentication, database, and multi-step flow"
+  author: "AIHF Platform"
+  category: "general"
+  tags: ["starter", "full-stack", "auth"]
+  icon: "dashboard"
+
+status:
+  enabled: true
+  visible: true
+  workerVisible: false
+
+spec:
+  services:
+    notification_rules: []
+    cost_limits:
+      max: 0.01
+      alertAt: 0.008
+    features: ['aihfControlApp2AppTransitions']
+
+  groups:
+    - id: "users"
+      name: "Users"
+      description: "Default user group"
+      domain: "app"
+      type: "custom"
+
+  steps:
+    # Entry step — login / magic-link landing
+    - id: "home"
+      name: "Home"
+      type: "workflow-entry"
+      permissions:
+        required_groups: ["users"]
+        allow_virtual_group: true
+      conditions:
+        - type: "options"
+          variable: "action"
+          options:
+            - option: "login"
+              target: "verify"
+            - option: "dashboard"
+              target: "dashboard"
+
+    # Magic-link verification (auto-routed by platform)
+    - id: "verify"
+      name: "Verify Authentication"
+      permissions:
+        required_groups: ["users"]
+        allow_virtual_group: true
+      conditions:
+        - type: "options"
+          variable: "action"
+          options:
+            - option: "verified"
+              target: "dashboard"
+
+    # Dashboard — authenticated users
+    - id: "dashboard"
+      name: "Dashboard"
+      permissions:
+        required_groups: ["users"]
+        allow_virtual_group: true
+      conditions:
+        - type: "options"
+          variable: "action"
+          options:
+            - option: "complete"
+              target: "complete"
+
+    # Terminator
+    - id: "complete"
+      name: "Workflow Complete"
+      type: "workflow-terminator"
+      permissions:
+        allow_virtual_group: true

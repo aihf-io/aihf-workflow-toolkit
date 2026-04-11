@@ -43,6 +43,7 @@ const self = await sdk.getSelfEntity();
 | `sdk.workflows` | Workflow listing, config, and config helpers |
 | `sdk.preferences` | Notification and workflow preferences |
 | `sdk.credentials` | Passwords and full OAuth lifecycle |
+| `sdk.containers` | Sandboxed container environments (Jupyter, Python, Node.js) |
 
 ---
 
@@ -909,6 +910,159 @@ const plans = await sdk.billing.listPlans();
 
 ---
 
+## ContainersManager
+
+Sandboxed compute containers (Jupyter, Python, Node.js). See [Containers](./CONTAINERS.md) for the full guide with lifecycle diagrams and complete examples.
+
+### Lifecycle Methods (8)
+
+#### launch(config)
+
+Launch a new container session.
+
+```typescript
+const session = await sdk.containers.launch({
+  image: 'jupyter-science',
+  taskId: 'task_abc123',
+  blockId: 'jupyter-block',
+  envVars: { MODEL: 'gpt-4' },
+});
+// Returns: ContainerSession { sessionId, status, orgId, entityId, ... }
+```
+
+#### writeFiles(sessionId, files)
+
+Write files into the container's `/workspace` directory.
+
+```typescript
+await sdk.containers.writeFiles(sessionId, [
+  { path: 'notebook.ipynb', content: notebookJson },
+  { path: 'data.csv', content: csvData },
+  { path: 'image.png', content: base64Data, encoding: 'base64' },
+]);
+```
+
+#### proxy(sessionId, request)
+
+Proxy an HTTP or WebSocket request to the container's application port.
+
+```typescript
+return sdk.containers.proxy(sessionId, request);
+// Returns: Response
+```
+
+#### status(sessionId)
+
+Get the current status of a container session.
+
+```typescript
+const status = await sdk.containers.status(sessionId);
+// Returns: ContainerStatus { sessionId, state, bootstrapReady, appReady, lastHeartbeat, cpuUsagePct?, memoryUsageMb? }
+```
+
+#### installRequirements(sessionId, cfg)
+
+Install Python packages inside the container via pip.
+
+```typescript
+const result = await sdk.containers.installRequirements(sessionId, {
+  requirements: ['numpy', 'pandas==2.1.0'],
+  timeoutSeconds: 300,
+});
+// Returns: RequirementsInstallResult { success, installed, failed, stdout, stderr }
+```
+
+#### disableInternet(sessionId)
+
+Disable network egress from the container. Call after `installRequirements()`.
+
+```typescript
+await sdk.containers.disableInternet(sessionId);
+```
+
+#### signalReady(sessionId)
+
+Signal the bootstrap service to start the application (e.g., Jupyter on port 8888).
+
+```typescript
+await sdk.containers.signalReady(sessionId);
+```
+
+#### stop(sessionId)
+
+Stop the container and free the Durable Object. Idempotent.
+
+```typescript
+await sdk.containers.stop(sessionId);
+```
+
+### Kernel Methods (7)
+
+#### connectKernel(sessionId)
+
+Connect to the Jupyter kernel. Creates a kernel if none exists.
+
+```typescript
+const { kernelId, state } = await sdk.containers.connectKernel(sessionId);
+// Returns: KernelConnectResult { kernelId, state }
+```
+
+#### execute(sessionId, code)
+
+Submit code for execution on the kernel.
+
+```typescript
+const { executionId } = await sdk.containers.execute(sessionId, 'print(1+1)');
+// Returns: KernelExecuteResult { executionId }
+```
+
+#### getOutput(sessionId, cursor)
+
+Read kernel output messages since the given cursor.
+
+```typescript
+const batch = await sdk.containers.getOutput(sessionId, lastCursor);
+for (const msg of batch.messages) { handle(msg); }
+lastCursor = batch.cursor;
+// Returns: KernelOutputBatch { messages: KernelMessage[], cursor, kernelState }
+```
+
+#### interrupt(sessionId)
+
+Interrupt the currently executing cell.
+
+```typescript
+await sdk.containers.interrupt(sessionId);
+```
+
+#### complete(sessionId, code, cursorPos)
+
+Request tab completion from the kernel.
+
+```typescript
+const { matches } = await sdk.containers.complete(sessionId, 'np.arr', 6);
+// Returns: KernelCompleteResult { matches, cursorStart, cursorEnd }
+```
+
+#### kernelStatus(sessionId)
+
+Get kernel status including output buffer size.
+
+```typescript
+const { kernelId, state, bufferSize } = await sdk.containers.kernelStatus(sessionId);
+// Returns: KernelStatusResult { kernelId, state, bufferSize }
+```
+
+#### pruneOutput(sessionId, cursor)
+
+Prune the output buffer up to the given cursor. Call periodically to bound storage.
+
+```typescript
+await sdk.containers.pruneOutput(sessionId, lastAcknowledgedCursor);
+```
+
+---
+
 ## UtilitiesManager
 
 Rich document, data, and UI processing tools. The UtilitiesManager exposes 9 sub-managers:
@@ -1465,6 +1619,113 @@ interface WorkflowConfigField {
   min?: number;
   max?: number;
   step?: number;
+}
+```
+
+---
+
+### Container Types
+
+Types for the `sdk.containers` manager. See [Containers](./CONTAINERS.md) for full documentation.
+
+```typescript
+type ContainerState = 'launching' | 'ready' | 'error' | 'stopped';
+
+interface ContainerLaunchConfig {
+  image: string;
+  taskId: string;
+  blockId: string;
+  envVars?: Record<string, string>;
+  cpu?: number;
+  memoryMb?: number;
+  timeoutSeconds?: number;
+  allowedIndexUrls?: string[];
+  deniedPackages?: string[];
+}
+
+interface ContainerSession {
+  sessionId: string;
+  orgId: string;
+  entityId: string;
+  taskId: string;
+  blockId: string;
+  doId: string;
+  status: ContainerState;
+  createdAt: number;
+  lastActiveAt: number;
+  internetDisabled: boolean;
+  image: string;
+  bootstrapPort: number;
+  appPort: number;
+}
+
+interface ContainerFile {
+  path: string;
+  content: string;
+  encoding?: 'utf8' | 'base64';
+  mode?: string;
+}
+
+interface ContainerStatus {
+  sessionId: string;
+  state: ContainerState;
+  bootstrapReady: boolean;
+  appReady: boolean;
+  lastHeartbeat: number;
+  cpuUsagePct?: number;
+  memoryUsageMb?: number;
+}
+
+interface RequirementsInstallConfig {
+  requirements: string[];
+  indexUrl?: string;
+  extraIndexUrls?: string[];
+  timeoutSeconds?: number;
+}
+
+interface RequirementsInstallResult {
+  success: boolean;
+  installed: string[];
+  failed: Array<{ package: string; error: string }>;
+  stdout: string;
+  stderr: string;
+}
+
+type KernelState = 'idle' | 'busy' | 'starting' | 'error' | 'dead' | 'unknown';
+
+interface KernelConnectResult {
+  kernelId: string;
+  state: KernelState;
+}
+
+interface KernelExecuteResult {
+  executionId: string;
+}
+
+interface KernelOutputBatch {
+  messages: KernelMessage[];
+  cursor: number;
+  kernelState: KernelState;
+}
+
+interface KernelMessage {
+  msgType: string;
+  parentMsgId?: string;
+  content: Record<string, unknown>;
+  channel: string;
+  receivedAt: number;
+}
+
+interface KernelCompleteResult {
+  matches: string[];
+  cursorStart: number;
+  cursorEnd: number;
+}
+
+interface KernelStatusResult {
+  kernelId: string;
+  state: KernelState;
+  bufferSize: number;
 }
 ```
 

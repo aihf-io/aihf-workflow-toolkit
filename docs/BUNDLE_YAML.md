@@ -236,6 +236,12 @@ types (objects, arrays) should be serialized as strings (JSON).
 
 ### Streaming API Handlers (SSE)
 
+> The SSE example below uses `sdk.containers.getOutput()` and
+> `sdk.containers.status()` — these are methods on the **Containers API**
+> (`sdk.containers`), which provides sandboxed Jupyter, Python, and Node.js
+> compute environments launched from workflow handlers. See
+> [Containers](./CONTAINERS.md) for the full API reference and lifecycle guide.
+
 For long-running responses (live kernel output, chat streams, progress
 tickers), declare the handler as SSE by setting its `output` to a single
 `Response` parameter named `SSE`:
