@@ -1,0 +1,49 @@
+{
+  "name": "OAuth Signup Configuration",
+  "description": "Configure parameters for the OAuth signup workflow",
+  "version": 1,
+  "fields": [
+    {
+      "id": "company_name",
+      "label": "Company Name",
+      "type": "string",
+      "default": "My App",
+      "description": "Company name shown on login/signup pages",
+      "value": "My App"
+    },
+    {
+      "id": "app_url",
+      "label": "Application URL",
+      "type": "string",
+      "default": "https://app.example.com",
+      "placeholder": "https://...",
+      "description": "Public URL of the application",
+      "value": "https://app.example.com"
+    },
+    {
+      "id": "primary_color",
+      "label": "Primary Color",
+      "type": "string",
+      "default": "#3b82f6",
+      "placeholder": "#RRGGBB",
+      "description": "Primary brand color",
+      "value": "#3b82f6"
+    },
+    {
+      "id": "google_oauth_enabled",
+      "label": "Enable Google OAuth",
+      "type": "boolean",
+      "default": true,
+      "description": "Allow sign-in with Google",
+      "value": true
+    },
+    {
+      "id": "apple_oauth_enabled",
+      "label": "Enable Apple OAuth",
+      "type": "boolean",
+      "default": true,
+      "description": "Allow sign-in with Apple",
+      "value": true
+    }
+  ]
+}

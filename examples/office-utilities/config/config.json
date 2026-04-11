@@ -1,0 +1,109 @@
+{
+  "name": "Office Utilities Configuration",
+  "description": "Configure parameters for the office utilities workflow",
+  "version": 1,
+  "fields": [
+    {
+      "id": "company_name",
+      "label": "Company Name",
+      "type": "string",
+      "default": "Office Tools",
+      "description": "Company name shown in the application",
+      "value": "Office Tools"
+    },
+    {
+      "id": "app_url",
+      "label": "Application URL",
+      "type": "string",
+      "default": "https://app.example.com",
+      "placeholder": "https://...",
+      "description": "Public URL of the application",
+      "value": "https://app.example.com"
+    },
+    {
+      "id": "primary_color",
+      "label": "Primary Color",
+      "type": "string",
+      "default": "#3b82f6",
+      "placeholder": "#RRGGBB",
+      "description": "Primary brand color",
+      "value": "#3b82f6"
+    },
+    {
+      "id": "doc_max_size_mb",
+      "label": "Document Max Size (MB)",
+      "type": "number",
+      "default": 10,
+      "min": 1,
+      "max": 50,
+      "description": "Maximum upload size for documents",
+      "value": 10
+    },
+    {
+      "id": "spreadsheet_max_size_mb",
+      "label": "Spreadsheet Max Size (MB)",
+      "type": "number",
+      "default": 20,
+      "min": 1,
+      "max": 100,
+      "description": "Maximum upload size for spreadsheets",
+      "value": 20
+    },
+    {
+      "id": "spreadsheet_max_rows",
+      "label": "Spreadsheet Max Rows",
+      "type": "number",
+      "default": 100000,
+      "min": 1000,
+      "max": 1000000,
+      "description": "Maximum number of rows supported in spreadsheets",
+      "value": 100000
+    },
+    {
+      "id": "pdf_format",
+      "label": "Default PDF Format",
+      "type": "select",
+      "options": [
+        { "value": "A4", "label": "A4" },
+        { "value": "Letter", "label": "US Letter" },
+        { "value": "Legal", "label": "US Legal" }
+      ],
+      "default": "A4",
+      "description": "Default page format for generated PDFs",
+      "value": "A4"
+    },
+    {
+      "id": "image_max_size_mb",
+      "label": "Image Max Size (MB)",
+      "type": "number",
+      "default": 15,
+      "min": 1,
+      "max": 50,
+      "description": "Maximum upload size for images",
+      "value": 15
+    },
+    {
+      "id": "image_default_format",
+      "label": "Default Image Format",
+      "type": "select",
+      "options": [
+        { "value": "webp", "label": "WebP" },
+        { "value": "jpeg", "label": "JPEG" },
+        { "value": "png", "label": "PNG" }
+      ],
+      "default": "webp",
+      "description": "Default output format for processed images",
+      "value": "webp"
+    },
+    {
+      "id": "image_default_quality",
+      "label": "Default Image Quality",
+      "type": "number",
+      "default": 85,
+      "min": 10,
+      "max": 100,
+      "description": "Default quality percentage for image compression",
+      "value": 85
+    }
+  ]
+}

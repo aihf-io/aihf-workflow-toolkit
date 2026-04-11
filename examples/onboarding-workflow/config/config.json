@@ -1,0 +1,66 @@
+{
+  "name": "Onboarding Workflow Configuration",
+  "description": "Configure parameters for the user onboarding workflow",
+  "version": 1,
+  "fields": [
+    {
+      "id": "company_name",
+      "label": "Company Name",
+      "type": "string",
+      "default": "My App",
+      "description": "Company name shown during onboarding",
+      "value": "My App"
+    },
+    {
+      "id": "primary_color",
+      "label": "Primary Color",
+      "type": "string",
+      "default": "#667eea",
+      "placeholder": "#RRGGBB",
+      "description": "Primary brand color",
+      "value": "#667eea"
+    },
+    {
+      "id": "secondary_color",
+      "label": "Secondary Color",
+      "type": "string",
+      "default": "#764ba2",
+      "placeholder": "#RRGGBB",
+      "description": "Secondary brand color",
+      "value": "#764ba2"
+    },
+    {
+      "id": "require_phone",
+      "label": "Require Phone Number",
+      "type": "boolean",
+      "default": false,
+      "description": "Require users to provide a phone number during signup",
+      "value": false
+    },
+    {
+      "id": "require_company",
+      "label": "Require Company Name",
+      "type": "boolean",
+      "default": false,
+      "description": "Require users to provide a company name during signup",
+      "value": false
+    },
+    {
+      "id": "from_name",
+      "label": "Email From Name",
+      "type": "string",
+      "default": "My App",
+      "description": "Sender name for onboarding emails",
+      "value": "My App"
+    },
+    {
+      "id": "from_address",
+      "label": "Email From Address",
+      "type": "string",
+      "default": "noreply@example.com",
+      "placeholder": "noreply@yourdomain.com",
+      "description": "Sender email address for onboarding emails",
+      "value": "noreply@example.com"
+    }
+  ]
+}

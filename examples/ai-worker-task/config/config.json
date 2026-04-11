@@ -1,0 +1,84 @@
+{
+  "name": "AI Worker Task Configuration",
+  "description": "Configure parameters for the AI document analysis workflow",
+  "version": 1,
+  "fields": [
+    {
+      "id": "company_name",
+      "label": "Company Name",
+      "type": "string",
+      "default": "Document Analyzer",
+      "description": "Company name shown in the application",
+      "value": "Document Analyzer"
+    },
+    {
+      "id": "app_url",
+      "label": "Application URL",
+      "type": "string",
+      "default": "https://app.example.com",
+      "placeholder": "https://...",
+      "description": "Public URL of the application",
+      "value": "https://app.example.com"
+    },
+    {
+      "id": "primary_color",
+      "label": "Primary Color",
+      "type": "string",
+      "default": "#3b82f6",
+      "placeholder": "#RRGGBB",
+      "description": "Primary brand color",
+      "value": "#3b82f6"
+    },
+    {
+      "id": "confidence_threshold",
+      "label": "AI Confidence Threshold",
+      "type": "number",
+      "default": 0.85,
+      "min": 0.5,
+      "max": 1.0,
+      "description": "Minimum confidence score for AI analysis results to be accepted",
+      "value": 0.85
+    },
+    {
+      "id": "max_document_size_mb",
+      "label": "Max Document Size (MB)",
+      "type": "number",
+      "default": 10,
+      "min": 1,
+      "max": 50,
+      "description": "Maximum upload size for documents in megabytes",
+      "value": 10
+    },
+    {
+      "id": "supported_format",
+      "label": "Supported Formats",
+      "type": "multiselect",
+      "options": [
+        { "value": "docx", "label": "DOCX" },
+        { "value": "rtf", "label": "RTF" },
+        { "value": "txt", "label": "TXT" },
+        { "value": "html", "label": "HTML" },
+        { "value": "pdf", "label": "PDF" }
+      ],
+      "default": ["docx", "rtf", "txt", "html", "pdf"],
+      "description": "Document formats accepted for analysis",
+      "value": ["docx", "rtf", "txt", "html", "pdf"]
+    },
+    {
+      "id": "require_human_approval",
+      "label": "Require Human Approval",
+      "type": "boolean",
+      "default": true,
+      "description": "Require a human reviewer to approve AI analysis results",
+      "value": true
+    },
+    {
+      "id": "auto_approve_high_confidence",
+      "label": "Auto-Approve High Confidence",
+      "type": "boolean",
+      "default": true,
+      "description": "Automatically approve results that exceed the confidence threshold",
+      "value": true
+    }
+  ]
+}

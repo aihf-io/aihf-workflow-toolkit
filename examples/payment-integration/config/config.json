@@ -1,0 +1,51 @@
+{
+  "name": "Payment Integration Configuration",
+  "description": "Configure parameters for the payment integration workflow",
+  "version": 1,
+  "fields": [
+    {
+      "id": "company_name",
+      "label": "Company Name",
+      "type": "string",
+      "default": "My SaaS App",
+      "description": "Company name shown on payment pages",
+      "value": "My SaaS App"
+    },
+    {
+      "id": "app_url",
+      "label": "Application URL",
+      "type": "string",
+      "default": "https://app.example.com",
+      "placeholder": "https://...",
+      "description": "Public URL of the application",
+      "value": "https://app.example.com"
+    },
+    {
+      "id": "primary_color",
+      "label": "Primary Color",
+      "type": "string",
+      "default": "#3b82f6",
+      "placeholder": "#RRGGBB",
+      "description": "Primary brand color",
+      "value": "#3b82f6"
+    },
+    {
+      "id": "monthly_stripe_price_id",
+      "label": "Monthly Stripe Price ID",
+      "type": "string",
+      "default": "price_monthly_xxx",
+      "placeholder": "price_...",
+      "description": "Stripe price ID for the monthly plan",
+      "value": "price_monthly_xxx"
+    },
+    {
+      "id": "yearly_stripe_price_id",
+      "label": "Yearly Stripe Price ID",
+      "type": "string",
+      "default": "price_yearly_xxx",
+      "placeholder": "price_...",
+      "description": "Stripe price ID for the yearly plan",
+      "value": "price_yearly_xxx"
+    }
+  ]
+}

@@ -1,0 +1,24 @@
+{
+  "name": "Basic Workflow Configuration",
+  "description": "Configure parameters for this workflow",
+  "version": 1,
+  "fields": [
+    {
+      "id": "app_name",
+      "label": "Application Name",
+      "type": "string",
+      "default": "My App",
+      "description": "Display name for this workflow",
+      "value": "My App"
+    },
+    {
+      "id": "primary_color",
+      "label": "Primary Color",
+      "type": "string",
+      "default": "#3b82f6",
+      "placeholder": "#RRGGBB",
+      "description": "Primary brand color used in the UI",
+      "value": "#3b82f6"
+    }
+  ]
+}

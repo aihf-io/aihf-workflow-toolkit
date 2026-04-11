@@ -1,0 +1,27 @@
+name: basic-workflow
+version: 1
+
+# Basic workflow template
+# A simple starting point for new AIHF.io workflows
+
+steps:
+  # Single step with UI and API
+  - id: "main"
+    route: '/'
+    domain: 'app'
+    ui:
+      css: 'static/mystyle.css'
+      script: 'static/myfunctions.js'
+      dynamic: 'ui/main.ts'
+    api:
+      - route_match: '/submit'
+        file: 'api/submit.ts'
+        input:
+          - name: 'message'
+            type: 'string'
+            description: 'User message'
+        output:
+          - name: 'success'
+            type: 'boolean'
+          - name: 'response'
+            type: 'string'

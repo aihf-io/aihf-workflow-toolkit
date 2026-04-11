@@ -1,0 +1,100 @@
+name: office-utilities
+version: 1
+
+# Office document processing utilities
+
+steps:
+  # Document Editor
+  - id: "document-editor"
+    route: '/documents'
+    domain: 'app'
+    ui:
+      dynamic: 'ui/document-editor.ts'
+    api:
+      - route_match: '/parse'
+        file: 'api/parse-document.ts'
+        input:
+          - name: 'document'
+            type: 'file'
+            description: 'Document file (DOCX, RTF, TXT, HTML)'
+          - name: 'filename'
+            type: 'string'
+        output:
+          - name: 'html'
+            type: 'string'
+          - name: 'text'
+            type: 'string'
+          - name: 'metadata'
+            type: 'object'
+      - route_match: '/save'
+        file: 'api/save-document.ts'
+        input:
+          - name: 'documentId'
+            type: 'string'
+          - name: 'content'
+            type: 'string'
+
+  # Spreadsheet Viewer
+  - id: "spreadsheet-viewer"
+    route: '/spreadsheets'
+    domain: 'app'
+    ui:
+      dynamic: 'ui/spreadsheet-viewer.ts'
+    api:
+      - route_match: '/parse'
+        file: 'api/parse-spreadsheet.ts'
+        input:
+          - name: 'file'
+            type: 'file'
+          - name: 'filename'
+            type: 'string'
+        output:
+          - name: 'sheets'
+            type: 'array'
+          - name: 'metadata'
+            type: 'object'
+
+  # PDF Extractor
+  - id: "pdf-extractor"
+    route: '/pdf'
+    domain: 'app'
+    ui:
+      dynamic: 'ui/pdf-viewer.ts'
+    api:
+      - route_match: '/extract'
+        file: 'api/generate-pdf.ts'
+        input:
+          - name: 'pdfData'
+            type: 'file'
+            description: 'PDF file buffer'
+          - name: 'filename'
+            type: 'string'
+            description: 'Original filename'
+        output:
+          - name: 'pages'
+            type: 'array'
+            description: 'Extracted page content'
+          - name: 'metadata'
+            type: 'object'
+            description: 'PDF metadata'
+
+  # Image Gallery
+  - id: "image-gallery"
+    route: '/images'
+    domain: 'app'
+    ui:
+      dynamic: 'ui/image-gallery.ts'
+    api:
+      - route_match: '/process'
+        file: 'api/process-image.ts'
+        input:
+          - name: 'image'
+            type: 'file'
+            description: 'Image file buffer'
+        output:
+          - name: 'metadata'
+            type: 'object'
+            description: 'Image metadata (format, dimensions, size)'
+          - name: 'dataUrl'
+            type: 'string'
+            description: 'Base64 data URL for preview'

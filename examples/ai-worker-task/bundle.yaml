@@ -1,0 +1,70 @@
+name: ai-worker-task
+version: 1
+
+# AI-powered document analysis with human review
+
+steps:
+  # Customer upload (public)
+  - id: "upload"
+    route: '/upload'
+    domain: 'app'
+    ui:
+      dynamic: 'ui/upload.ts'
+    api:
+      - route_match: '/submit'
+        file: 'api/submit-document.ts'
+        input:
+          - name: 'document'
+            type: 'file'
+            description: 'Document file to analyze'
+          - name: 'filename'
+            type: 'string'
+            description: 'Original filename'
+        output:
+          - name: 'success'
+            type: 'boolean'
+          - name: 'taskId'
+            type: 'string'
+
+  # AI processing (internal)
+  - id: "ai-analyze"
+    route: '/process'
+    domain: 'work'
+    api:
+      - route_match: '/analyze'
+        file: 'api/ai-analyze.ts'
+        input:
+          - name: 'documentId'
+            type: 'string'
+        output:
+          - name: 'analysis'
+            type: 'object'
+          - name: 'confidence'
+            type: 'number'
+
+  # Human review (internal)
+  - id: "review"
+    route: '/review'
+    domain: 'work'
+    ui:
+      dynamic: 'ui/review.ts'
+    api:
+      - route_match: '/approve'
+        file: 'api/approve-analysis.ts'
+        input:
+          - name: 'documentId'
+            type: 'string'
+          - name: 'approved'
+            type: 'boolean'
+          - name: 'corrections'
+            type: 'object'
+        output:
+          - name: 'success'
+            type: 'boolean'
+
+  # Results (public)
+  - id: "results"
+    route: '/results'
+    domain: 'app'
+    ui:
+      dynamic: 'ui/results.ts'

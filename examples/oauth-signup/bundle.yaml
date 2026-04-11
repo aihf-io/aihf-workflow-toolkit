@@ -1,0 +1,71 @@
+name: oauth-signup
+version: 1
+
+# OAuth authentication with Google and Apple
+
+steps:
+  # Login page with OAuth options
+  - id: "login"
+    route: '/login'
+    domain: 'app'
+    ui:
+      dynamic: 'ui/login.ts'
+
+  # Google OAuth initiation
+  - id: "oauth-google"
+    route: '/oauth/google'
+    domain: 'app'
+    api:
+      - route_match: '/'
+        file: 'api/oauth-google.ts'
+        output:
+          - name: 'redirectUrl'
+            type: 'string'
+
+  # Apple OAuth initiation
+  - id: "oauth-apple"
+    route: '/oauth/apple'
+    domain: 'app'
+    api:
+      - route_match: '/'
+        file: 'api/oauth-apple.ts'
+        output:
+          - name: 'redirectUrl'
+            type: 'string'
+
+  # OAuth callback handler
+  - id: "oauth-callback"
+    route: '/oauth/callback'
+    domain: 'app'
+    api:
+      - route_match: '/google'
+        file: 'api/oauth-callback.ts'
+        input:
+          - name: 'code'
+            type: 'string'
+          - name: 'state'
+            type: 'string'
+        output:
+          - name: 'success'
+            type: 'boolean'
+          - name: 'entityId'
+            type: 'string'
+      - route_match: '/apple'
+        file: 'api/oauth-callback.ts'
+        input:
+          - name: 'code'
+            type: 'string'
+          - name: 'state'
+            type: 'string'
+        output:
+          - name: 'success'
+            type: 'boolean'
+          - name: 'entityId'
+            type: 'string'
+
+  # Dashboard (after login)
+  - id: "dashboard"
+    route: '/dashboard'
+    domain: 'app'
+    ui:
+      dynamic: 'ui/dashboard.ts'

@@ -1,0 +1,59 @@
+name: full-stack-workflow
+version: 1
+
+# Full-stack workflow template
+# Complete workflow with authentication, database, and multi-step flow
+
+steps:
+  # Landing / Login page
+  - id: "home"
+    route: '/'
+    domain: 'app'
+    ui:
+      dynamic: 'ui/home.ts'
+    api:
+      - route_match: '/login'
+        file: 'api/login.ts'
+        input:
+          - name: 'email'
+            type: 'string'
+        output:
+          - name: 'success'
+            type: 'boolean'
+
+  # Magic link verification
+  - id: "verify"
+    route: '/verify'
+    domain: 'app'
+    api:
+      - route_match: '/'
+        file: 'api/verify.ts'
+        input:
+          - name: 'token'
+            type: 'string'
+        output:
+          - name: 'verified'
+            type: 'boolean'
+
+  # Dashboard (authenticated)
+  - id: "dashboard"
+    route: '/dashboard'
+    domain: 'app'
+    ui:
+      dynamic: 'ui/dashboard.ts'
+    api:
+      - route_match: '/data'
+        file: 'api/get-data.ts'
+        output:
+          - name: 'items'
+            type: 'array'
+      - route_match: '/create'
+        file: 'api/create-item.ts'
+        input:
+          - name: 'title'
+            type: 'string'
+          - name: 'content'
+            type: 'string'
+        output:
+          - name: 'item'
+            type: 'object'

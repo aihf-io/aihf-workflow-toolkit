@@ -1,0 +1,76 @@
+name: onboarding-workflow
+version: 1
+
+# Multi-step user onboarding with email verification
+
+steps:
+  # Step 1: Welcome and initial signup
+  - id: "welcome"
+    route: '/start'
+    domain: 'app'
+    ui:
+      dynamic: 'ui/welcome.ts'
+    api:
+      - route_match: '/signup'
+        file: 'api/start-signup.ts'
+        input:
+          - name: 'email'
+            type: 'string'
+            description: 'User email address'
+          - name: 'name'
+            type: 'string'
+            description: 'Full name'
+        output:
+          - name: 'success'
+            type: 'boolean'
+          - name: 'message'
+            type: 'string'
+
+  # Step 2: Email verification
+  - id: "verify"
+    route: '/verify'
+    domain: 'app'
+    ui:
+      dynamic: 'ui/verify.ts'
+    api:
+      - route_match: '/confirm'
+        file: 'api/verify-email.ts'
+        input:
+          - name: 'token'
+            type: 'string'
+            description: 'Magic link token'
+        output:
+          - name: 'verified'
+            type: 'boolean'
+          - name: 'entityId'
+            type: 'string'
+
+  # Step 3: Complete profile
+  - id: "profile"
+    route: '/profile'
+    domain: 'app'
+    ui:
+      dynamic: 'ui/profile.ts'
+    api:
+      - route_match: '/save'
+        file: 'api/complete-profile.ts'
+        input:
+          - name: 'phone'
+            type: 'string'
+            description: 'Phone number'
+          - name: 'company'
+            type: 'string'
+            description: 'Company name'
+          - name: 'role'
+            type: 'string'
+            description: 'Job role'
+        output:
+          - name: 'success'
+            type: 'boolean'
+
+  # Step 4: Onboarding complete
+  - id: "complete"
+    route: '/complete'
+    domain: 'app'
+    ui:
+      dynamic: 'ui/complete.ts'

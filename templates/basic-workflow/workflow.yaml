@@ -1,0 +1,45 @@
+name: "basic-workflow"
+metadata:
+  title: "Basic Workflow"
+  version: 1
+  description: "A simple starting point for new AIHF.io workflows"
+  author: "AIHF Platform"
+  category: "general"
+  tags: ["starter"]
+  icon: "document"
+
+status:
+  enabled: true
+  visible: true
+  workerVisible: false
+
+spec:
+  services:
+    notification_rules: []
+    cost_limits:
+      max: 0.01
+      alertAt: 0.008
+
+  groups:
+    - id: "users"
+      name: "Users"
+      description: "Default user group"
+      domain: "app"
+      type: "custom"
+
+  steps:
+    - id: "main"
+      name: "Main Step"
+      type: "workflow-entry"
+      permissions:
+        required_groups: ["users"]
+        allow_virtual_group: true
+      conditions:
+        - type: "default"
+          target_true: "complete"
+
+    - id: "complete"
+      name: "Workflow Complete"
+      type: "workflow-terminator"
+      permissions:
+        allow_virtual_group: true

@@ -1,0 +1,67 @@
+{
+  "name": "@aihf/platform-sdk",
+  "version": "1.0.0",
+  "description": "AIHF.io Platform SDK - Build AI-Human workflows with authentication, payments, and AI integration",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "types/index.d.ts",
+  "bin": {
+    "aihf": "dist/bin/aihf.js"
+  },
+  "files": [
+    "dist/**/*",
+    "types/**/*",
+    "templates/**/*",
+    "examples/**/*",
+    "docs/**/*",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "clean": "rm -rf dist",
+    "prepublishOnly": "npm run build"
+  },
+  "dependencies": {
+    "archiver": "^6.0.0",
+    "chalk": "^5.0.0",
+    "commander": "^11.0.0",
+    "fs-extra": "^11.0.0",
+    "glob": "^10.0.0",
+    "js-yaml": "^4.1.0"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20250922.0",
+    "@types/archiver": "^6.0.0",
+    "@types/fs-extra": "^11.0.0",
+    "@types/js-yaml": "^4.0.0",
+    "@types/node": "^20.0.0",
+    "typescript": "^5.0.0"
+  },
+  "keywords": [
+    "aihf",
+    "platform",
+    "sdk",
+    "workflow",
+    "ai",
+    "human",
+    "cloudflare-workers",
+    "typescript",
+    "authentication",
+    "payments",
+    "stripe"
+  ],
+  "author": "AIHF.io",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/aihf-io/platform-sdk.git"
+  },
+  "bugs": {
+    "url": "https://github.com/aihf-io/platform-sdk/issues"
+  },
+  "homepage": "https://docs.aihf.io",
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

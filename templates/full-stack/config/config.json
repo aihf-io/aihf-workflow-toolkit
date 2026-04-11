@@ -1,0 +1,42 @@
+{
+  "name": "Full-Stack Workflow Configuration",
+  "description": "Configure parameters for this full-stack workflow",
+  "version": 1,
+  "fields": [
+    {
+      "id": "app_name",
+      "label": "Application Name",
+      "type": "string",
+      "default": "My Full-Stack App",
+      "description": "Display name for this workflow",
+      "value": "My Full-Stack App"
+    },
+    {
+      "id": "app_url",
+      "label": "Application URL",
+      "type": "string",
+      "default": "https://app.example.com",
+      "placeholder": "https://...",
+      "description": "Public URL of the application",
+      "value": "https://app.example.com"
+    },
+    {
+      "id": "primary_color",
+      "label": "Primary Color",
+      "type": "string",
+      "default": "#667eea",
+      "placeholder": "#RRGGBB",
+      "description": "Primary brand color",
+      "value": "#667eea"
+    },
+    {
+      "id": "secondary_color",
+      "label": "Secondary Color",
+      "type": "string",
+      "default": "#764ba2",
+      "placeholder": "#RRGGBB",
+      "description": "Secondary brand color",
+      "value": "#764ba2"
+    }
+  ]
+}

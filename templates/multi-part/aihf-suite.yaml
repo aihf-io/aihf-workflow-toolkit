@@ -1,0 +1,6 @@
+name: my-product
+description: "Multi-workflow product suite"
+shared:
+  - types/
+  - utils/
+workflows: []

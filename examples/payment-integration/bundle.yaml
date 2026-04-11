@@ -1,0 +1,71 @@
+name: payment-integration
+version: 1
+
+# Stripe payment and subscription management
+
+steps:
+  # Pricing page with plan selection
+  - id: "pricing"
+    route: '/pricing'
+    domain: 'app'
+    ui:
+      dynamic: 'ui/pricing.ts'
+    api:
+      - route_match: '/plans'
+        file: 'api/get-plans.ts'
+        output:
+          - name: 'plans'
+            type: 'array'
+            description: 'Available subscription plans'
+
+  # Checkout initiation
+  - id: "checkout"
+    route: '/checkout'
+    domain: 'app'
+    api:
+      - route_match: '/create'
+        file: 'api/create-checkout.ts'
+        input:
+          - name: 'planId'
+            type: 'string'
+            description: 'Selected plan identifier'
+        output:
+          - name: 'checkoutUrl'
+            type: 'string'
+            description: 'Stripe Checkout URL'
+
+  # Payment success callback
+  - id: "success"
+    route: '/success'
+    domain: 'app'
+    ui:
+      dynamic: 'ui/success.ts'
+    api:
+      - route_match: '/verify'
+        file: 'api/payment-success.ts'
+        input:
+          - name: 'session_id'
+            type: 'string'
+        output:
+          - name: 'verified'
+            type: 'boolean'
+          - name: 'subscription'
+            type: 'object'
+
+  # Billing management
+  - id: "billing"
+    route: '/billing'
+    domain: 'app'
+    ui:
+      dynamic: 'ui/billing.ts'
+    api:
+      - route_match: '/portal'
+        file: 'api/billing-portal.ts'
+        output:
+          - name: 'portalUrl'
+            type: 'string'
+      - route_match: '/status'
+        file: 'api/subscription-status.ts'
+        output:
+          - name: 'subscription'
+            type: 'object'
