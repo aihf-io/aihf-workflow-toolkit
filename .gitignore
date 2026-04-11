@@ -22,8 +22,12 @@ node_modules?
 *.env
 *.env.local
 
-#.claude
-#.claude?
+#anything Claude
+.claude
+.claude?
+
+# local build
+dist/
 
 # Terraform #
 ##############
