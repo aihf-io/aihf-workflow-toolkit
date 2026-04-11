@@ -1,0 +1,43 @@
+# OS generated files #
+######################
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+.vscode
+.vscode?
+
+# local node packages that are huge #
+node_modules
+node_modules?
+.wrangler
+.wrangler?
+.wrangler-prg-shared
+.wrangler-prg-shared?
+
+# Secrets and environment variables #
+.dev.vars
+.dev.vars?
+*.env
+*.env.local
+
+#.claude
+#.claude?
+
+# Terraform #
+##############
+*.tfstate
+*.tfstate.*
+*.tfstate.backup
+.terraform/
+.terraform.lock.hcl
+terraform.tfvars
+*.auto.tfvars
+crash.log
+crash.*.log
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+
