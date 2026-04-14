@@ -193,7 +193,7 @@ The platform renders on all screen sizes. Use responsive breakpoints:
 
 In addition to `additionalCSS` returned by your module, tenants can load a separate CSS file from R2 storage. This is useful for brand-level overrides that apply regardless of module logic.
 
-Set `customLandingCSS` on the tenant config to a path in the `TENANT_WORKFLOWS_R2` bucket:
+Set `customLandingCSS` on the tenant config to a path in the platform's workflow storage bucket:
 
 ```
 customLandingCSS: "tenants/acme/landing-overrides.css"
@@ -208,7 +208,7 @@ Custom landing pages are configured via the owner portal's Domain Management:
 | Field | Type | Description |
 |-------|------|-------------|
 | `customLandingUI` | `string` | Path to the landing module (dynamic import path) |
-| `customLandingCSS` | `string` (optional) | Path to CSS file in `TENANT_WORKFLOWS_R2` bucket |
+| `customLandingCSS` | `string` (optional) | Path to CSS file in the platform workflow storage bucket |
 
 Both fields are stored on the tenant configuration object. When `customLandingUI` is set, the platform invokes the custom landing flow. When it is not set (or empty), the default customer landing is served.
 

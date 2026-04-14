@@ -733,17 +733,14 @@ pending ──► claimed ──► in_progress ──┬──► completed (ha
 | `completed` | Terminal — task done | Released |
 | `failed` | Terminal — handler error | Released |
 
-### Detailed Documentation
+### Provisioning AI Workers
 
-For infrastructure-level understanding:
+To add an AI worker to your workflow:
 
-| Document | Description |
-|----------|-------------|
-| [AI Worker Service README](../../workers/ai-worker-service/README.md) | Complete service documentation |
-| [Campaign Initiator Module](../../workers/ai-worker-service/Campaign-Initiator-Module.md) | How worker-initiate tasks are created |
-| [Timing Logic](../../workers/ai-worker-service/Automation-worker-initiated-Timing-logic.md) | Scheduled task execution and deferral |
-| [Provisioning Flow](../../docs/AI-WORKER-PROVISIONING-FLOW-DETAILED.md) | How AI entities are provisioned |
-| [Admin Dashboard Events](../../docs/AI-Worker-EVENTS-Admin-Dashboard.md) | Monitoring and reporting |
+1. Log into **admin.aihf.io**
+2. Navigate to **Entities > Create Entity** and set `profile.type` to `ai`
+3. Assign the entity to the appropriate groups (matching your `required_groups` in workflow.yaml)
+4. Under **AI Worker Service**, provision the entity to enable automated task execution
 
 ## Complete Example: Invoice Processing
 
@@ -930,6 +927,143 @@ export async function invokedByAIHF(
 6. **Keep handlers focused**: One task per handler. Let workflow.yaml conditions handle routing, not imperative code
 7. **Design for idempotency**: Worker-initiated tasks may re-execute if a poll cycle overlaps. Use timestamps and `INSERT OR IGNORE` patterns
 8. **Use `workerVisible: false`** only for workflows that should never appear in the work portal (rare — default is `true`)
+
+## Testing AI Instructions Before Deployment
+
+Before deploying a workflow with AI-powered steps, use the `aihf eval` command to test
+your instruction prompts against real data without deploying to production.
+
+### How It Works
+
+The eval command replicates exactly what the AI Worker Service does in production:
+it assembles prompts from your instruction YAML, calls the Claude API with the same
+system prompt and structure used at runtime, and validates the outputs against your
+`expected_output_schema`.
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                   aihf eval — Local Test Loop                   │
+│                                                                 │
+│  instruction.yaml  +  test-data.json                           │
+│         │                  │                                    │
+│         └────────┬─────────┘                                   │
+│                  ▼                                              │
+│         Assemble prompt (same as production)                    │
+│                  │                                              │
+│                  ▼                                              │
+│         Claude API  (your ANTHROPIC_API_KEY)                    │
+│                  │                                              │
+│                  ▼                                              │
+│         Validate JSON output against expected_output_schema     │
+│         Check assertions (expected field values)               │
+│         Measure: confidence · consistency · latency · cost      │
+│                  │                                              │
+│                  └──── Repeat N runs per test case ─────────── │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+This means: **if your instruction passes eval, it will behave identically when deployed.**
+Eval is not a simulation — it's the same prompt structure hitting the same API.
+
+### When to Use Eval
+
+Use `aihf eval` when:
+- Writing a new instruction YAML for the first time
+- Changing `task_instructions` or `business_rules` in an existing instruction
+- Tuning `confidence_threshold` — run eval to see what confidence scores your
+  test cases actually produce before choosing a threshold
+- Comparing model performance: run eval twice with `-m claude-sonnet-4-5-20250929`
+  and `-m claude-haiku-4-5-20251001` to see if the cheaper model is sufficient
+- Verifying output consistency — multiple runs (`--runs 5`) reveals whether Claude
+  returns consistent field values or produces variable outputs for the same input
+
+### Quick Example
+
+```bash
+# Test an instruction with 3 runs per test case (default)
+aihf eval . \
+  --instructions src/instructions/invoice-check.instruction.yaml \
+  --dataset test-data/invoice-scenarios.json
+
+# Compare two models
+aihf eval . -i src/instructions/invoice-check.instruction.yaml \
+  -d test-data/invoice-scenarios.json \
+  -m claude-haiku-4-5-20251001
+
+# Enable LLM-as-judge grading for subjective quality scoring
+aihf eval . -i src/instructions/invoice-check.instruction.yaml \
+  -d test-data/invoice-scenarios.json \
+  --grade
+
+# Save a JSON report for later comparison
+aihf eval . -i src/instructions/invoice-check.instruction.yaml \
+  -d test-data/invoice-scenarios.json \
+  -o reports/sonnet-baseline.json
+```
+
+### What the Report Shows
+
+After each eval run, you receive a report covering:
+
+| Metric | What It Tells You |
+|--------|------------------|
+| **Schema Compliance** | Whether Claude's JSON output matched your `expected_output_schema` on each run |
+| **Assertion Pass Rate** | Whether specific field values matched your `expected` values in the dataset |
+| **Avg Confidence** | The mean `confidence` value Claude returned — tune `confidence_threshold` against this |
+| **Confidence Std Dev** | How consistent confidence scores are across runs — high variance means the instruction is ambiguous |
+| **Consistency** | For each output field: how often Claude returned the same value across runs |
+| **Token Usage + Cost** | Input/output tokens and estimated API cost for the eval run |
+
+### Test Dataset Format
+
+Create a JSON file alongside your instruction:
+
+```json
+{
+  "description": "Invoice validation test cases",
+  "test_cases": [
+    {
+      "name": "valid-invoice-standard",
+      "inputs": {
+        "invoice_number": "INV-2024-001",
+        "amount": 1500.00,
+        "vendor": "Acme Corp",
+        "line_items": [...]
+      },
+      "expected": {
+        "approved": true,
+        "confidence": 0.9
+      }
+    },
+    {
+      "name": "missing-line-items",
+      "inputs": {
+        "invoice_number": "INV-2024-002",
+        "amount": 500.00,
+        "vendor": "Unknown Vendor",
+        "line_items": []
+      },
+      "expected": {
+        "approved": false
+      }
+    }
+  ]
+}
+```
+
+### API Key Requirement
+
+The eval command calls the Anthropic API directly using your own API key — not the
+platform's. You are billed for these eval calls at standard Anthropic rates.
+
+```bash
+export ANTHROPIC_API_KEY=sk-ant-...
+aihf eval . --instructions src/instructions/my-task.instruction.yaml \
+             --dataset test-data/cases.json
+```
+
+See [Prompt Evaluation Guide](./PROMPT_EVAL.md) for the complete command reference and
+advanced options including model-based grading.
 
 ## Related Documentation
 

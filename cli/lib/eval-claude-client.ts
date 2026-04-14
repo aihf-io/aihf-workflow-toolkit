@@ -1,7 +1,6 @@
 /**
  * Lightweight Claude API Client for Eval
  *
- * Direct HTTP client matching workers/ai-worker-service/src/claude-service.ts patterns.
  * No retry logic — fail fast for eval runs.
  */
 

@@ -2,16 +2,8 @@
  * AIHF.io Platform SDK Type Definitions
  * Version 6.0.0
  *
- * These type definitions are aligned 1:1 with the gateway SDK implementation:
- *   - workers/gateway/src/platform-sdk/index.ts
- *   - workers/gateway/src/platform-sdk/utilities-manager.ts
- *   - workers/gateway/src/level3/types/utility-types.ts
- *   - workers/gateway/src/level3/types/workflow-types.ts
- *   - workers/gateway/src/level3/types/identity-type.ts
- *   - workers/gateway/src/level3/types/oauth-types.ts
- *   - workers/gateway/src/level3/types/preference-types.ts
- *   - workers/gateway/src/level3/types/payment-types.ts
- *   - workers/gateway/src/level3/core/file-manager-service.ts
+ * Type definitions for the @aihf/platform-sdk package.
+ * Full documentation: https://docs.aihf.io
  */
 
 declare module '@aihf/platform-sdk' {

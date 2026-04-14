@@ -711,8 +711,7 @@ Upload your ZIP bundle at **admin.aihf.io**:
 1. Log into your tenant's admin portal
 2. Navigate to **Workflows > Deploy Bundle**
 3. Upload the ZIP
-4. The platform extracts your compiled JS into `workers/gateway/src/workflows/{name}/{version}/dist/`
-5. wrangler's `find_additional_modules = true` discovers your handlers automatically
+4. The platform's CI/CD pipeline processes your bundle and deploys it automatically (synced every 3 hours)
 
 Your workflow is now live. Customers see it on `app.{tenant}.aihf.io` and workers process tasks on `work.{tenant}.aihf.io`.
 

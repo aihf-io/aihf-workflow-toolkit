@@ -2,8 +2,8 @@
  * Eval Command — Evaluate AI instruction prompts against test datasets
  *
  * Loads an instruction YAML + sample test data, assembles prompts exactly as
- * ai-worker-service/task-executor.ts does, calls Claude API, validates outputs
- * against the instruction's expected_output_schema, and reports metrics.
+ * the platform does in production, calls Claude API, validates outputs against
+ * the instruction's expected_output_schema, and reports metrics.
  */
 
 import { join, resolve, basename } from 'path';
