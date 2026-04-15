@@ -50,15 +50,18 @@ workflow.yaml      → Step definitions, conditions, routing logic
 ```typescript
 import { AIHFPlatform } from '@aihf/platform-sdk';
 
-export default async function handler(
+export async function invokedByAIHF(
   sdk: AIHFPlatform,
-  request: Request
-): Promise<Response> {
-  const body = await request.json();
+  workflowName: string,
+  workflowVersion: number,
+  workflowStepId: string,
+  taskId: string,
+  sanitisedInput: string
+): Promise<Response | null> {
+  const { fieldName } = JSON.parse(sanitisedInput);
   // ... use sdk.entities, sdk.database, sdk.tasks etc.
-  return new Response(JSON.stringify({ success: true }), {
-    headers: { 'Content-Type': 'application/json' }
-  });
+  sdk.tasks.setStepData(JSON.stringify({ fieldName }));
+  return new Response(JSON.stringify({ success: true }));
 }
 ```
 
@@ -66,24 +69,36 @@ export default async function handler(
 ```typescript
 import { AIHFPlatform } from '@aihf/platform-sdk';
 
-export default async function handler(
+export async function renderAIHFWorkflowStepUI(
   sdk: AIHFPlatform,
-  request: Request
-): Promise<string> {
-  // Return an HTML string — the platform renders it
-  return `<div class="aihf-container">...</div>`;
+  workflowName: string,
+  workflowVersion: number,
+  stepRoute: string,
+  taskId: string
+): Promise<Response | null> {
+  // Return HTML wrapped in a Response — the platform renders it
+  const html = `<div class="aihf-container">...</div>`;
+  return new Response(html, {
+    headers: { 'Content-Type': 'text/html' }
+  });
 }
 ```
 
 ### Work Domain (AI Worker) Handler
 ```typescript
-export default async function handler(
+import { AIHFPlatform } from '@aihf/platform-sdk';
+
+export async function invokedByAIHF(
   sdk: AIHFPlatform,
-  request: Request,
-  claudeOutput?: any   // Present when step has an instruction YAML
-): Promise<{ hasWork: boolean; [key: string]: any }> {
+  workflowName: string,
+  workflowVersion: number,
+  workflowStepId: string,
+  taskId: string,
+  sanitisedInput: string
+): Promise<Response | null> {
+  const data = JSON.parse(sanitisedInput);
   // Always return hasWork — the platform evaluates workflow.yaml conditions on output
-  return { hasWork: true, result: claudeOutput?.decision };
+  return new Response(JSON.stringify({ hasWork: true, confidence: 0.97 }));
 }
 ```
 
@@ -146,8 +161,8 @@ These are enforced by `aihf validate` and the platform at runtime:
 
 1. **Only import from `@aihf/platform-sdk`** — no other platform imports
 2. **All routes declared in `bundle.yaml`** — unregistered routes are rejected
-3. **UI handlers return strings** — not `Response` objects
-4. **Work handlers return `{ hasWork: boolean, ... }`** — always include `hasWork`
+3. **UI handlers return `Response | null`** — HTML content wrapped in a Response
+4. **Work handlers return `Response` with `{ hasWork: boolean, ... }` JSON** — always include `hasWork`
 5. **`initWorkflow.ts` must be idempotent** — use `CREATE TABLE IF NOT EXISTS`, `INSERT OR IGNORE`
 6. **No direct Cloudflare bindings** — all platform resources go through the SDK
 
