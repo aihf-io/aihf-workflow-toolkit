@@ -37,6 +37,8 @@ const VALID_MANAGER_NAMES = [
   'files',
   'preferences',
   'billing',
+  'containers',
+  'scanning',
 ] as const;
 
 // ---------------------------------------------------------------------------
@@ -89,6 +91,7 @@ const VALID_MANAGER_METHODS: Record<string, string[]> = {
     'createIdentityWithOAuth',
     'getLinkedOAuthProviders',
     'unlinkOAuthProvider',
+    'getSecret',
   ],
   utilities: [
     'documents',
@@ -126,6 +129,29 @@ const VALID_MANAGER_METHODS: Record<string, string[]> = {
     'getSubscription',
     'createPortalSession',
     'listPlans',
+  ],
+  containers: [
+    'launch',
+    'stop',
+    'status',
+    'writeFiles',
+    'installRequirements',
+    'disableInternet',
+    'signalReady',
+    'connectKernel',
+    'execute',
+    'getOutput',
+    'pruneOutput',
+    'interrupt',
+    'complete',
+    'kernelStatus',
+    'proxy',
+  ],
+  scanning: [
+    'scanContent',
+    'scanContentOrThrow',
+    'scanContentBatch',
+    'reportFalsePositive',
   ],
 };
 
@@ -948,7 +974,7 @@ function validateManagerNames(content: string, file: string, result: ValidationR
   while ((match = sdkAccessPattern.exec(strippedContent)) !== null) {
     const managerName = match[1];
     // Skip if it is a known top-level method on AIHFPlatform
-    const topLevelMethods = ['getSelfEntity', 'getRemoteKVSyncPayload', 'acknowledgeRemoteCommands'];
+    const topLevelMethods = ['getSelfEntity', 'getSelfEntityGroups', 'getRemoteKVSyncPayload', 'acknowledgeRemoteCommands'];
     if (topLevelMethods.includes(managerName)) continue;
     // Skip common non-manager accesses
     if (['constructor', 'prototype', 'then', 'catch', 'finally'].includes(managerName)) continue;

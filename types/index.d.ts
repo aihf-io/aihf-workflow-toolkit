@@ -29,9 +29,13 @@ declare module '@aihf/platform-sdk' {
     readonly preferences: PreferencesManager;
     readonly billing: BillingManager;
     readonly containers: ContainersManager;
+    readonly scanning: ScanningManager;
 
     /** Get the current entity from session */
     getSelfEntity(): Promise<AIHFEntity>;
+
+    /** Get the current entity's AIHF groups */
+    getSelfEntityGroups(): Promise<AIHFGroup[]>;
 
     /** Get raw KV sync payload for a remote gateway. Requires 'kv.remote-sync' permission. */
     getRemoteKVSyncPayload(gatewayId: string): Promise<RemoteSyncPayload>;
@@ -107,6 +111,14 @@ declare module '@aihf/platform-sdk' {
 
   export interface AIHFEntityPaymentInfo {
     [key: string]: unknown;
+  }
+
+  export interface AIHFGroup {
+    group_id: string;
+    name: string;
+    description?: string;
+    domain?: string;
+    type?: string;
   }
 
   // ============================================================================
@@ -378,6 +390,16 @@ declare module '@aihf/platform-sdk' {
   export class CredentialsManager {
     /** Change the current entity's password */
     changeSelfPassword(newPassword: string): Promise<void>;
+
+    /**
+     * Retrieve a decrypted secret from the tenant's credential store.
+     * Matches by credential name and tag hash for per-topic key resolution.
+     *
+     * @param name - Credential name (e.g., 'ANTHROPIC_API_KEY')
+     * @param tagHash - SHA-256 hash of a tag value to match
+     * @returns Decrypted credential value
+     */
+    getSecret(name: string, tagHash: string): Promise<string>;
 
     /** Initiate OAuth flow. Returns authorization URL and state token. */
     initiateOAuth(
@@ -753,6 +775,107 @@ declare module '@aihf/platform-sdk' {
 
     /** Prune the kernel output buffer up to the given cursor */
     pruneOutput(sessionId: string, cursor: number): Promise<void>;
+  }
+
+  // ============================================================================
+  // SCANNING MANAGER
+  // ============================================================================
+
+  export type ScanProfile =
+    | 'aihf_chat_instruction'
+    | 'aihf_chat_config'
+    | 'aihf_chat_theme_css'
+    | 'aihf_chat_customer_message'
+    | 'aihf_chat_prompt_assembly'
+    | 'aihf_chat_handover_context'
+    | 'aihf_chat_worker_augmentation'
+    | 'aihf_chat_supervisor_message'
+    | 'auth_handler_code'
+    | 'ai_response'
+    | 'user_input_chat'
+    | 'email_content'
+    | 'notification_content';
+
+  export interface ScanContext {
+    tenant_id: string;
+    workflow_name?: string;
+    operation: string;
+    entity_id?: string;
+    task_id?: string;
+    topic_id?: string;
+    topic_step_id?: string;
+    turn_number?: number;
+    additional?: Record<string, unknown>;
+  }
+
+  export interface ScanRequest {
+    content: string;
+    profile: ScanProfile;
+    context: ScanContext;
+  }
+
+  export type Severity = 'low' | 'medium' | 'high' | 'critical';
+
+  export type ThreatClass =
+    | 'prompt_injection'
+    | 'code_injection'
+    | 'loop_pattern'
+    | 'content_safety';
+
+  export interface ScanFinding {
+    scanner: string;
+    rule: string;
+    severity: Severity;
+    location?: { line: number; column: number };
+    excerpt?: string;
+    remediation_hint?: string;
+  }
+
+  export interface ScanResult {
+    passed: boolean;
+    severity: Severity;
+    threats: ThreatClass[];
+    findings: ScanFinding[];
+    suggestions: string[];
+    scan_duration_ms: number;
+    content_hash: string;
+  }
+
+  export class ContentScanError extends Error {
+    readonly payload: {
+      message: string;
+      result: ScanResult;
+    };
+    constructor(payload: { message: string; result: ScanResult });
+    /** Safe JSON for customer-facing responses (no detailed findings) */
+    toResponseJson(): { error: string; threats: string[]; severity: string };
+    /** Full JSON for operator/studio-facing responses */
+    toDetailedResponseJson(): {
+      error: string;
+      threats: string[];
+      severity: string;
+      findings: ScanFinding[];
+      suggestions: string[];
+    };
+  }
+
+  export class ScanningManager {
+    /** Scan content against a named security profile */
+    scanContent(request: ScanRequest): Promise<ScanResult>;
+
+    /** Scan content and throw ContentScanError if blocked */
+    scanContentOrThrow(request: ScanRequest): Promise<ScanResult>;
+
+    /** Batch scan — scan multiple content items, each with its own profile */
+    scanContentBatch(requests: ScanRequest[]): Promise<ScanResult[]>;
+
+    /** Report a false positive — operator flags a blocked scan as incorrect. Emits audit event. */
+    reportFalsePositive(report: {
+      content_hash: string;
+      profile: string;
+      findings: ScanResult['findings'];
+      operator_notes: string;
+    }): Promise<void>;
   }
 
   // ============================================================================
