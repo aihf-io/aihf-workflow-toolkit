@@ -3,7 +3,7 @@
  */
 
 import { join, resolve, dirname, relative } from 'path';
-import { existsSync, mkdirSync } from 'fs';
+import { existsSync, mkdirSync, readFileSync } from 'fs';
 import { fileURLToPath } from 'url';
 import chalk from 'chalk';
 import { exec } from 'child_process';
@@ -58,6 +58,187 @@ function detectSuiteContext(bundlePath: string): SuiteContext | null {
   }
 
   return null;
+}
+
+/**
+ * Walk up from startDir looking for node_modules/{packageName}/package.json.
+ * Returns the package directory path, or null if not found.
+ */
+function resolvePackageDir(packageName: string, startDir: string): string | null {
+  let current = resolve(startDir);
+  const root = resolve('/');
+
+  while (current !== root) {
+    const candidate = join(current, 'node_modules', packageName, 'package.json');
+    if (existsSync(candidate)) {
+      return dirname(candidate);
+    }
+    const parent = dirname(current);
+    if (parent === current) break;
+    current = parent;
+  }
+  return null;
+}
+
+/**
+ * Resolve the ESM entry point from a package.json object.
+ * Tries: exports["."]["import"] → module → main → index.js
+ */
+function getESMEntryPoint(pkgJson: any): string {
+  // Modern ESM: exports["."]["import"] or exports["."].import
+  if (pkgJson.exports) {
+    const dot = pkgJson.exports['.'];
+    if (typeof dot === 'object' && dot !== null) {
+      if (typeof dot.import === 'string') return dot.import;
+      // Handle nested conditions like { import: { default: "./path" } }
+      if (typeof dot.import === 'object' && dot.import?.default) return dot.import.default;
+    }
+    // exports["."] can be a string directly
+    if (typeof dot === 'string') return dot;
+    // exports might be a string (single entry)
+    if (typeof pkgJson.exports === 'string') return pkgJson.exports;
+  }
+  // Legacy ESM
+  if (pkgJson.module) return pkgJson.module;
+  // CJS fallback
+  if (pkgJson.main) return pkgJson.main;
+  // Last resort
+  return 'index.js';
+}
+
+/**
+ * Scan .js files in dist/src/ (excluding _lib/) and rewrite bare specifier imports
+ * to relative paths pointing into _lib/.
+ */
+async function rewriteBareSpecifiers(
+  outputPath: string,
+  vendorMap: Map<string, string>
+): Promise<number> {
+  if (vendorMap.size === 0) return 0;
+
+  const fs = await import('fs/promises');
+  const glob = await import('glob');
+  const srcPath = join(outputPath, 'src');
+
+  const jsFiles = glob.globSync('**/*.js', {
+    cwd: srcPath,
+    ignore: ['_lib/**']
+  });
+
+  const staticImportRe = /(from\s+['"])([^'"./][^'"]*?)(['"])/g;
+  const dynamicImportRe = /(import\s*\(\s*['"])([^'"./][^'"]*?)(['"]\s*\))/g;
+
+  let rewriteCount = 0;
+
+  for (const file of jsFiles) {
+    const filePath = join(srcPath, file);
+    const content = await fs.readFile(filePath, 'utf-8');
+    let modified = false;
+
+    const fileDir = dirname(file); // relative to srcPath
+
+    const rewriter = (_match: string, prefix: string, specifier: string, suffix: string): string => {
+      // Check exact package name first, then scoped prefix
+      const pkgEntry = vendorMap.get(specifier);
+      if (pkgEntry) {
+        // pkgEntry is relative to _lib dir, e.g. "js-yaml/dist/js-yaml.mjs"
+        const libFilePath = join('_lib', pkgEntry);
+        let rel = relative(fileDir, libFilePath);
+        if (!rel.startsWith('.')) rel = './' + rel;
+        modified = true;
+        return `${prefix}${rel}${suffix}`;
+      }
+      return _match;
+    };
+
+    const newContent = content
+      .replace(staticImportRe, rewriter)
+      .replace(dynamicImportRe, rewriter);
+
+    if (modified) {
+      await fs.writeFile(filePath, newContent, 'utf-8');
+      rewriteCount++;
+    }
+  }
+
+  return rewriteCount;
+}
+
+/**
+ * Vendor npm dependencies into dist/src/_lib/ and rewrite bare specifier imports.
+ */
+async function vendorDependencies(bundlePath: string, outputPath: string): Promise<void> {
+  const pkgJsonPath = join(bundlePath, 'package.json');
+  if (!existsSync(pkgJsonPath)) return;
+
+  let pkgJson: any;
+  try {
+    pkgJson = JSON.parse(readFileSync(pkgJsonPath, 'utf-8'));
+  } catch {
+    return;
+  }
+
+  const deps = pkgJson.dependencies || {};
+  const skipPackages = new Set(['@aihf/platform-sdk', 'typescript']);
+
+  const runtimeDeps = Object.keys(deps).filter(name =>
+    !skipPackages.has(name) && !name.startsWith('@types/')
+  );
+
+  if (runtimeDeps.length === 0) return;
+
+  const fs = await import('fs/promises');
+  const { copy } = await import('fs-extra');
+
+  const libDir = join(outputPath, 'src', '_lib');
+  const vendored = new Set<string>();
+  // Maps package name → entry file path relative to _lib/
+  const vendorMap = new Map<string, string>();
+
+  async function vendorPackage(packageName: string): Promise<void> {
+    if (vendored.has(packageName)) return;
+    vendored.add(packageName);
+
+    const pkgDir = resolvePackageDir(packageName, bundlePath);
+    if (!pkgDir) {
+      console.warn(chalk.yellow(`Warning: dependency '${packageName}' not found in node_modules — skipping`));
+      return;
+    }
+
+    // Copy package directory to _lib/
+    const destDir = join(libDir, packageName);
+    await copy(pkgDir, destDir, { overwrite: true });
+
+    // Determine entry point
+    let subPkgJson: any;
+    try {
+      subPkgJson = JSON.parse(readFileSync(join(pkgDir, 'package.json'), 'utf-8'));
+    } catch {
+      subPkgJson = {};
+    }
+
+    const entryPoint = getESMEntryPoint(subPkgJson);
+    // Store mapping: packageName → packageName/entryPoint (relative to _lib/)
+    vendorMap.set(packageName, join(packageName, entryPoint));
+
+    // Recursively vendor sub-dependencies
+    const subDeps = subPkgJson.dependencies || {};
+    for (const subDep of Object.keys(subDeps)) {
+      await vendorPackage(subDep);
+    }
+  }
+
+  for (const dep of runtimeDeps) {
+    await vendorPackage(dep);
+  }
+
+  // Rewrite bare specifier imports in compiled .js files
+  const rewriteCount = await rewriteBareSpecifiers(outputPath, vendorMap);
+
+  console.log(chalk.green(`Vendored ${vendored.size} dependenc${vendored.size === 1 ? 'y' : 'ies'} into dist/src/_lib/`));
+  if (rewriteCount > 0) {
+    console.log(chalk.green(`Rewrote imports in ${rewriteCount} file${rewriteCount === 1 ? '' : 's'}`));
+  }
 }
 
 export async function compileCommand(bundlePath: string, options: CompileOptions) {
@@ -239,6 +420,9 @@ export async function compileCommand(bundlePath: string, options: CompileOptions
         console.log(chalk.green('Cleaned up temporary src/_shared/'));
       }
     }
+
+    // Vendor npm dependencies into dist/src/_lib/ and rewrite imports
+    await vendorDependencies(resolvedPath, outputPath);
 
     // Validate compiled output
     console.log(chalk.yellow('Validating compiled output...'));
