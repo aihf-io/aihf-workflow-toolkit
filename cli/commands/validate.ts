@@ -51,7 +51,6 @@ const VALID_MANAGER_METHODS: Record<string, string[]> = {
     'updateEntity',
     'findByUsername',
     'createEntity',
-    'selfRegisterEntity',
   ],
   tasks: [
     'setStepData',
@@ -106,6 +105,8 @@ const VALID_MANAGER_METHODS: Record<string, string[]> = {
   ],
   auth: [
     'createMagicLink',
+    'updateSelfAlias',
+    'getSelfAliases',
   ],
   files: [
     'list',

@@ -45,3 +45,6 @@ override.tf.json
 *_override.tf
 *_override.tf.json
 
+
+# Local backups created by sync-to-toolkit.sh (do not commit)
+.sync-backups/

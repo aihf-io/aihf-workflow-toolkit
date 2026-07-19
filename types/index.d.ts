@@ -61,10 +61,21 @@ declare module '@aihf/platform-sdk' {
     groups: string[];
     profile: AIHFEntityProfile;
     payment_info: AIHFEntityPaymentInfo[];
+    alias?: AIHFEntityAlias[];
     created_at: number;
     created_by: string;
     last_login?: number;
     last_updated: number;
+  }
+
+  /** A named magic-link reuse policy on an entity. */
+  export interface AIHFEntityAlias {
+    /** The alias name (unique key within the entity's alias list). */
+    name: string;
+    /** The magic session id currently bound to this alias. */
+    magic_sessionId: string;
+    /** How many times a magic link minted under this alias can be reused (max 5). */
+    magic_reuse: number;
   }
 
   export interface AIHFEntityProfile {
@@ -141,23 +152,8 @@ declare module '@aihf/platform-sdk' {
     /** Create a new entity. Requires admin permissions. */
     createEntity(data: Partial<AIHFEntity>): Promise<AIHFEntity>;
 
-    /**
-     * Self-register entity for JIT (Just-In-Time) provisioning via OAuth/SAML.
-     * Requires a valid JIT context from OAuth callback flow.
-     */
-    selfRegisterEntity(
-      data: {
-        username: string;
-        email: string;
-        displayName?: string;
-        oauthProvider: string;
-        oauthSub: string;
-      },
-      jitContext: {
-        tenantId: string;
-        validatedByOAuthCallback: boolean;
-      }
-    ): Promise<AIHFEntity>;
+    // NOTE: JIT self-registration (selfRegisterEntity) is platform-internal only — invoked
+    // directly by the OAuth callback handler, not exposed on the SDK.
   }
 
   // ============================================================================
@@ -459,12 +455,21 @@ declare module '@aihf/platform-sdk' {
     createMagicLink(options: {
       entityId: string;
       workflowName: string;
-      workflowVersion: number;
+      /** Workflow version, or `'l'` for the latest enabled version (resolved at click-time). */
+      workflowVersion: number | 'l';
       stepId: string;
       expiresInMinutes?: number;
       metadata?: Record<string, any>;
       queryParams?: Record<string, string>;
+      /** Optional Entity Alias name — applies that alias's magic-link reuse policy. */
+      alias?: string;
     }): Promise<string | null>;
+
+    /** Create or update an Entity Alias on the caller's own entity. `magicReuse` defaults to 1 (max 5). */
+    updateSelfAlias(options: { name: string; magicReuse?: number }): Promise<void>;
+
+    /** Get the caller's own Entity Aliases (name, magic_sessionId, magic_reuse) for self-reporting. */
+    getSelfAliases(): Promise<AIHFEntityAlias[]>;
   }
 
   // ============================================================================

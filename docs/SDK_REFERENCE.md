@@ -36,7 +36,7 @@ const self = await sdk.getSelfEntity();
 | `sdk.database` | D1 database operations (raw SQL) |
 | `sdk.emails` | Transactional email sending |
 | `sdk.billing` | Stripe payments and subscriptions |
-| `sdk.auth` | Authentication (Magic Links) |
+| `sdk.auth` | Authentication (Magic Links, Entity Aliases) |
 | `sdk.files` | R2 file storage (path-based) |
 | `sdk.utilities` | Document, spreadsheet, PDF, image, tensor, diagram, calendar, wave, and UI tools |
 | `sdk.tasks` | Workflow step data management |
@@ -634,7 +634,7 @@ await sdk.credentials.unlinkOAuthProvider('google', 'ent_abc123');
 
 ## AuthManager
 
-Authentication utilities for Magic Links.
+Authentication utilities for Magic Links and Entity Aliases.
 
 ### createMagicLink(options)
 
@@ -644,11 +644,12 @@ Generate a magic link for an entity to access a specific workflow step. Requires
 const magicLink = await sdk.auth.createMagicLink({
   entityId: 'ent_abc123',
   workflowName: 'onboarding',
-  workflowVersion: 1,
+  workflowVersion: 1,                            // or 'l' for the latest enabled version
   stepId: 'verify-email',
   expiresInMinutes: 60,                          // optional
   metadata: { source: 'signup' },                 // optional
-  queryParams: { returnTo: '/dashboard' }         // optional
+  queryParams: { returnTo: '/dashboard' },        // optional
+  alias: 'onboarding'                             // optional — apply an Entity Alias reuse policy
 });
 // Returns: string | null (the magic link URL)
 
@@ -659,6 +660,43 @@ await sdk.emails.send({
   body: 'Click to login',
   bodyHtml: `<a href="${magicLink}">Click to login</a>`
 });
+```
+
+Set `workflowVersion` to a number to pin the link to that exact version, or to `'l'` to target the
+**latest enabled version**. With `'l'`, the link embeds the `/l/` version alias and re-resolves to
+whatever the latest version is at the moment it is redeemed (the step route is resolved from the
+latest version at creation time).
+
+By default a magic link is **single-use** — the session is terminated the first time it is
+redeemed. Passing an `alias` that matches one of the caller's Entity Aliases (see below) applies
+that alias's reuse policy instead, letting the same link be redeemed up to `magic_reuse` times
+before it is terminated.
+
+### updateSelfAlias(options)
+
+Create or update an Entity Alias on the **caller's own** entity. An alias names a magic-link reuse
+policy: `magicReuse` sets how many times a magic link minted under this alias may be reused before
+its session is terminated (defaults to `1`, capped at `5`). Updating an existing alias preserves the
+`magic_sessionId` currently bound to it.
+
+```typescript
+// Allow magic links minted under the "onboarding" alias to be reused up to 3 times
+await sdk.auth.updateSelfAlias({ name: 'onboarding', magicReuse: 3 });
+
+// magicReuse defaults to 1 (single reuse) when omitted
+await sdk.auth.updateSelfAlias({ name: 'preview' });
+// Returns: void
+```
+
+### getSelfAliases()
+
+Get the caller's own Entity Aliases for self-reporting. Returns each alias's `name`,
+`magic_sessionId` (the magic session currently bound to it), and `magic_reuse` (its reuse count).
+
+```typescript
+const aliases = await sdk.auth.getSelfAliases();
+// Returns: Array<{ name: string; magic_sessionId: string; magic_reuse: number }>
+// e.g. [{ name: 'onboarding', magic_sessionId: 'sess_...', magic_reuse: 3 }]
 ```
 
 ---
