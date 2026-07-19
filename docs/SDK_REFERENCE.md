@@ -107,27 +107,6 @@ const newEntity = await sdk.entities.createEntity({
 // Returns: AIHFEntity
 ```
 
-### selfRegisterEntity(data, jitContext)
-
-Self-register an entity for JIT (Just-In-Time) provisioning via OAuth/SAML. Requires a valid JIT context from an OAuth callback flow.
-
-```typescript
-const entity = await sdk.entities.selfRegisterEntity(
-  {
-    username: 'user@example.com',
-    email: 'user@example.com',
-    displayName: 'John Doe',
-    oauthProvider: 'google',
-    oauthSub: '1234567890'
-  },
-  {
-    tenantId: 'tenant_abc',
-    validatedByOAuthCallback: true
-  }
-);
-// Returns: AIHFEntity
-```
-
 ### AIHFEntity Type
 
 ```typescript
