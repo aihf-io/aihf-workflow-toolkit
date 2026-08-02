@@ -32,6 +32,9 @@ interface WorkflowManifestStepHandler {
     dynamic: string;
   };
   api: WorkflowManifestStepAPIHandler[];
+  notification_handler?: {
+    file: string;             // TypeScript file exporting handleNotification()
+  };
 }
 
 interface WorkflowManifestStepAPIHandler {
@@ -98,6 +101,7 @@ Each step in the `steps` array:
 | `domain` | string | No | `'app'` or `'work'` (defaults to `'work'`) |
 | `ui` | object | Yes | UI configuration |
 | `api` | array | Yes | API endpoint definitions |
+| `notification_handler` | object | No | Post-send notification hook (see [Notification Handler](#notification-handler)) |
 
 ### Domains
 
@@ -334,6 +338,79 @@ export async function invokedByAIHFSSE(
 - `taskId` and `cursor` are always injected into `inputs` by the platform
   — you do not need to declare them in `input` (though declaring `cursor`
   lets you set a `default`).
+
+## Notification Handler
+
+The optional `notification_handler` property on a step declares a post-send hook that runs whenever a notification is delivered to a user whose active task is at that step. It is step-scoped — only fires for notifications targeting a user at that specific workflow step.
+
+```yaml
+steps:
+  - id: "dashboard"
+    route: '/dashboard'
+    domain: 'app'
+    ui:
+      dynamic: 'ui/dashboard.ts'
+    api:
+      - route_match: '/save'
+        file: 'api/save.ts'
+        input: []
+        output: []
+    notification_handler:
+      file: 'api/on-notification.ts'
+```
+
+| Property | Type | Required | Description |
+|----------|------|----------|-------------|
+| `file` | string | Yes | TypeScript file path exporting `handleNotification()` |
+
+### Handler Implementation
+
+The handler file must export a `handleNotification` function:
+
+```typescript
+// src/api/on-notification.ts
+import { AIHFPlatform } from '@aihf/platform-sdk';
+
+export async function handleNotification(
+  sdk: AIHFPlatform,
+  notification: {
+    id: string;
+    content: string;
+    senderId: string;
+    senderRole: string;
+    taskId?: string;
+    createdAt: string;
+  }
+): Promise<void> {
+  // Example: log notification to workflow database
+  await sdk.database.insert('my-workflow', 'notification_log', {
+    notification_id: notification.id,
+    content: notification.content,
+    sender_id: notification.senderId,
+    received_at: notification.createdAt
+  });
+}
+```
+
+### Behaviour
+
+- **Post-send**: The notification is already stored and visible to the recipient when the handler runs.
+- **Fire-and-forget**: The handler runs asynchronously via `ctx.waitUntil()` — it does not block the sender's response.
+- **30-second timeout**: Handlers that exceed 30 seconds are terminated.
+- **Non-fatal**: Errors are logged but never propagated to the sender or recipient.
+- **Step-scoped**: Only invoked when the recipient's active task is at a step that declares the handler.
+- **taskId required**: Notifications without a `taskId` have no workflow context and do not trigger the handler.
+- **Full SDK access**: The handler receives a fully provisioned `AIHFPlatform` instance scoped to the notification recipient's identity.
+
+### Use Cases
+
+- Log notifications to a workflow-specific database table
+- Send follow-up emails or push notifications via external APIs
+- Update workflow state (e.g. mark a review item as "notified")
+- Trigger integrations (Slack, webhooks) when specific notification content arrives
+- Self-messaging patterns: use `sdk.notifications.sendToSelfAliases()` in an API handler, then react in the notification handler across alias sessions
+
+---
 
 ## Complete Example
 

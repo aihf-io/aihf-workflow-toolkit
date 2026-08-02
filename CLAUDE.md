@@ -152,6 +152,7 @@ infrastructure. Your only deployment action is uploading the ZIP to admin.aihf.i
 | `sdk.containers` | Long-running container job management |
 | `sdk.utilities` | Platform utilities (slugs, tokens, formatting) |
 | `sdk.auth` | Authentication flows (magic link, OAuth, passkey) |
+| `sdk.notifications` | Send/receive platform notifications (RBAC-enforced) |
 
 Full reference: [SDK Reference](./docs/SDK_REFERENCE.md)
 

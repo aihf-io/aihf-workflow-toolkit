@@ -29,6 +29,7 @@ declare module '@aihf/platform-sdk' {
     readonly preferences: PreferencesManager;
     readonly billing: BillingManager;
     readonly containers: ContainersManager;
+    readonly notifications: NotificationManager;
     readonly scanning: ScanningManager;
 
     /** Get the current entity from session */
@@ -780,6 +781,57 @@ declare module '@aihf/platform-sdk' {
 
     /** Prune the kernel output buffer up to the given cursor */
     pruneOutput(sessionId: string, cursor: number): Promise<void>;
+  }
+
+  // ============================================================================
+  // NOTIFICATION MANAGER
+  // ============================================================================
+
+  export interface UserNotification {
+    id: string;
+    content: string;
+    senderId: string;
+    receiverId: string;
+    tenantId: string;
+    senderRole: string;
+    recipientRole: string;
+    taskId?: string;
+    createdAt: Date;
+    acknowledgedAt?: Date;
+    editedAt?: Date;
+    originalContent?: string;
+    isDeletedByUser: boolean;
+  }
+
+  /**
+   * Send and receive platform notifications from workflow code.
+   * All sends are subject to RBAC enforcement — customer-role entities
+   * can only send to their own entity ID (self-messaging via aliases).
+   */
+  export class NotificationManager {
+    /**
+     * Send a notification to a recipient entity.
+     * RBAC rules apply: customers can only send to themselves (self_only).
+     */
+    send(options: {
+      receiverId: string;
+      content: string;
+      taskId?: string;
+    }): Promise<{ notificationId: string }>;
+
+    /**
+     * Send a notification to all (or specific) aliases of the caller's own entity.
+     * Each alias receives a separate notification. Useful for broadcasting
+     * across multiple magic-link sessions of the same entity.
+     */
+    sendToSelfAliases(options: {
+      content: string;
+      taskId?: string;
+      aliasNames?: string[];
+    }): Promise<{ sent: number }>;
+
+    /** Get the caller's own notifications. */
+    getMyNotifications(): Promise<UserNotification[]>;
   }
 
   // ============================================================================
@@ -1890,6 +1942,9 @@ declare module '@aihf/platform-sdk' {
     domain?: 'app' | 'work';
     ui: WorkflowManifestStepUIComponent;
     api: WorkflowManifestStepAPIHandler[];
+    notification_handler?: {
+      file: string;
+    };
   }
 
   export interface WorkflowManifestStepUIComponent {
@@ -2043,3 +2098,41 @@ export type InvokedByAIHFSSE = (
   taskId: string,
   inputs: Record<string, string>
 ) => Promise<Response>;
+
+/**
+ * Notification handler function signature.
+ *
+ * Called by AIHF after a notification is delivered to a user whose active
+ * task is at a step that declares `notification_handler` in bundle.yaml.
+ *
+ * This is a post-send hook — the notification is already stored and visible
+ * to the recipient. The handler runs fire-and-forget with a 30-second
+ * timeout. Errors are logged but never propagated to the sender.
+ *
+ * Declared in bundle.yaml:
+ * ```yaml
+ * notification_handler:
+ *   file: 'api/on-notification.ts'
+ * ```
+ *
+ * The handler file must export a `handleNotification` function:
+ * ```typescript
+ * export async function handleNotification(
+ *   sdk: AIHFPlatform,
+ *   notification: NotificationPayload
+ * ): Promise<void> { ... }
+ * ```
+ */
+export interface NotificationPayload {
+  id: string;
+  content: string;
+  senderId: string;
+  senderRole: string;
+  taskId?: string;
+  createdAt: string;
+}
+
+export type NotificationHandler = (
+  sdk: import('@aihf/platform-sdk').AIHFPlatform,
+  notification: NotificationPayload
+) => Promise<void>;

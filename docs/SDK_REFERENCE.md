@@ -44,6 +44,7 @@ const self = await sdk.getSelfEntity();
 | `sdk.preferences` | Notification and workflow preferences |
 | `sdk.credentials` | Passwords and full OAuth lifecycle |
 | `sdk.containers` | Sandboxed container environments (Jupyter, Python, Node.js) |
+| `sdk.notifications` | Send and receive platform notifications from workflow code |
 
 ---
 
@@ -1080,6 +1081,62 @@ await sdk.containers.pruneOutput(sessionId, lastAcknowledgedCursor);
 
 ---
 
+## NotificationManager
+
+Send and receive platform notifications from workflow code. All sends are subject to the platform's RBAC rules — customer-role entities can only send to their own entity ID (self-messaging via aliases).
+
+### send(options)
+
+Send a notification to a recipient entity.
+
+```typescript
+const result = await sdk.notifications.send({
+  receiverId: 'ent_abc123',
+  content: 'Your document has been reviewed.',
+  taskId: taskId  // optional — links notification to the current task
+});
+// Returns: { notificationId: string }
+```
+
+**RBAC enforcement:**
+- Owner → admin, worker, customer
+- Admin → admin, worker, customer (not owner)
+- Worker → customer (task-scoped only)
+- Customer → customer (self-only — `senderId` must equal `receiverId`)
+
+### sendToSelfAliases(options)
+
+Send a notification to all (or specific) aliases of the caller's own entity. Each alias receives a separate notification. Useful for broadcasting across multiple magic-link sessions.
+
+```typescript
+// Send to all aliases
+const result = await sdk.notifications.sendToSelfAliases({
+  content: 'Data sync complete.',
+  taskId: taskId
+});
+// Returns: { sent: number }
+
+// Send to specific aliases only
+const result = await sdk.notifications.sendToSelfAliases({
+  content: 'Session update.',
+  taskId: taskId,
+  aliasNames: ['dashboard', 'mobile']
+});
+```
+
+### getMyNotifications()
+
+Get the caller's own notifications.
+
+```typescript
+const notifications = await sdk.notifications.getMyNotifications();
+// Returns: UserNotification[]
+// Each notification has: id, content, senderId, receiverId, senderRole,
+//   recipientRole, taskId?, createdAt, acknowledgedAt?, isDeletedByUser
+```
+
+---
+
 ## UtilitiesManager
 
 Rich document, data, and UI processing tools. The UtilitiesManager exposes 9 sub-managers:
@@ -1420,7 +1477,7 @@ try {
 
 ## Handler Function Signatures
 
-The platform invokes your workflow code using four handler signatures:
+The platform invokes your workflow code using five handler signatures:
 
 ### APIHandler
 
@@ -1477,6 +1534,40 @@ export type InitWorkflow = (
   workflowName: string,
   workflowVersion: number
 ) => Promise<string>;
+```
+
+### NotificationHandler
+
+Called after a notification is delivered to a user whose active task is at a step that declares `notification_handler` in bundle.yaml. This is a post-send hook — the notification is already stored. Runs fire-and-forget with a 30-second timeout.
+
+```typescript
+export async function handleNotification(
+  sdk: AIHFPlatform,
+  notification: {
+    id: string;
+    content: string;
+    senderId: string;
+    senderRole: string;
+    taskId?: string;
+    createdAt: string;
+  }
+): Promise<void> {
+  // React to the notification — e.g. update database, send follow-up email
+  const entity = await sdk.entities.getEntity(notification.senderId);
+  await sdk.database.insert('my-workflow', 'notification_log', {
+    notification_id: notification.id,
+    sender_name: entity?.profile?.display_name ?? 'Unknown',
+    content: notification.content,
+    received_at: notification.createdAt
+  });
+}
+```
+
+Declared per-step in `bundle.yaml`:
+
+```yaml
+notification_handler:
+  file: 'api/on-notification.ts'
 ```
 
 ---
