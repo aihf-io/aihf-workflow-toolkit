@@ -2,8 +2,10 @@
 
 **Where AI and Human Expertise Converge**
 
-[![npm version](https://badge.fury.io/js/@aihf%2Fplatform-sdk.svg)](https://www.npmjs.com/package/@aihf/platform-sdk)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
+> **Install:** `npm install -g github:aihf-io/aihf-workflow-toolkit` — the `aihf` CLI is distributed
+> from this repo (not yet on the npm registry). See [Quick Start](#quick-start).
 
 ---
 
@@ -77,9 +79,14 @@ This means:
 
 ### 1. Install the CLI
 
+The `aihf` CLI ships from this GitHub repo (it builds itself on install):
+
 ```bash
-npm install -g @aihf/platform-sdk
+npm install -g github:aihf-io/aihf-workflow-toolkit
 ```
+
+> Requires Node 18+. Prefer not to install globally? Use it ad-hoc with
+> `npx github:aihf-io/aihf-workflow-toolkit <command>`, or clone + `npm install` + `npm link`.
 
 ### 2. Create Your First Workflow
 
@@ -419,7 +426,7 @@ This walkthrough takes you from zero to a compiled, deployable workflow bundle. 
 ### Step 1: Install and Scaffold
 
 ```bash
-npm install -g @aihf/platform-sdk
+npm install -g github:aihf-io/aihf-workflow-toolkit
 aihf init expense-review --template basic-workflow
 cd expense-review
 ```

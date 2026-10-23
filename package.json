@@ -20,7 +20,7 @@
     "build": "tsc",
     "dev": "tsc --watch",
     "clean": "rm -rf dist",
-    "prepublishOnly": "npm run build"
+    "prepare": "npm run build"
   },
   "dependencies": {
     "archiver": "^6.0.0",
@@ -55,12 +55,12 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/aihf-io/platform-sdk.git"
+    "url": "git+https://github.com/aihf-io/aihf-workflow-toolkit.git"
   },
   "bugs": {
-    "url": "https://github.com/aihf-io/platform-sdk/issues"
+    "url": "https://github.com/aihf-io/aihf-workflow-toolkit/issues"
   },
-  "homepage": "https://docs.aihf.io",
+  "homepage": "https://github.com/aihf-io/aihf-workflow-toolkit#readme",
   "engines": {
     "node": ">=18.0.0"
   }

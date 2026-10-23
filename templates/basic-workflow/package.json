@@ -3,11 +3,11 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
-    "build": "aihf build",
-    "deploy": "aihf deploy"
+    "compile": "aihf compile .",
+    "validate": "aihf validate .",
+    "bundle": "aihf bundle ."
   },
   "devDependencies": {
-    "@aihf/bundle-cli": "^1.0.0",
     "typescript": "^5.0.0"
   }
 }
