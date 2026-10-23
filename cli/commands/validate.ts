@@ -39,6 +39,7 @@ const VALID_MANAGER_NAMES = [
   'billing',
   'containers',
   'scanning',
+  'notifications',
 ] as const;
 
 // ---------------------------------------------------------------------------
@@ -153,6 +154,11 @@ const VALID_MANAGER_METHODS: Record<string, string[]> = {
     'scanContentOrThrow',
     'scanContentBatch',
     'reportFalsePositive',
+  ],
+  notifications: [
+    'send',
+    'sendToSelfAliases',
+    'getMyNotifications',
   ],
 };
 

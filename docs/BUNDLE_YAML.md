@@ -30,6 +30,7 @@ interface WorkflowManifestStepHandler {
     css: string;
     script: string;
     dynamic: string;
+    layout?: 'default' | 'wide' | 'full';   // app-portal frame width (optional; default = 'default')
   };
   api: WorkflowManifestStepAPIHandler[];
   notification_handler?: {
@@ -112,20 +113,60 @@ Each step in the `steps` array:
 
 ## UI Configuration
 
-The `ui` object has three string properties for file paths:
+The `ui` object has three string properties for file paths, plus an optional `layout` preset:
 
 ```yaml
 ui:
   css: 'static/styles.css'           # CSS file path
   script: 'static/app.js'            # JavaScript file path
   dynamic: 'ui/renderer.ts'          # Dynamic UI renderer (TypeScript)
+  layout: 'wide'                     # optional: app-portal frame width (default | wide | full)
 ```
 
-| Property | Type | Description |
-|----------|------|-------------|
-| `css` | string | Path to CSS stylesheet |
-| `script` | string | Path to client JavaScript |
-| `dynamic` | string | TypeScript file that renders HTML dynamically |
+| Property | Type | Required | Description |
+|----------|------|----------|-------------|
+| `css` | string | Yes | Path to CSS stylesheet (relative to `src/`) |
+| `script` | string | Yes | Path to client JavaScript (relative to `src/`) |
+| `dynamic` | string | Yes | TypeScript file that renders HTML dynamically |
+| `layout` | string | No | App-portal frame width preset: `'default'` \| `'wide'` \| `'full'` (defaults to `'default'`) |
+
+### Layout preset
+
+`ui.layout` controls how wide the AIHF frame around your step is on the **app portal** (and magic-link
+steps). It auto-sizes down on smaller screens, so you don't need a separate mobile case, and the
+platform top banner (logout/settings) is kept in every preset. Height always grows with your content.
+
+| Preset | App portal | Magic-link step | Use for |
+|--------|-----------|-----------------|---------|
+| `default` (or omitted) | ~1400px, centered | 800px, centered | Standard forms / wizards — the default model |
+| `wide` | up to 1800px (`min(1800px, 96vw)`) | up to 1800px | Dashboards, tables, side-by-side layouts |
+| `full` | edge-to-edge (no max-width/padding) | edge-to-edge | Canvas / immersive / map / game UIs |
+
+```yaml
+steps:
+  - id: dashboard
+    route: '/dashboard'
+    domain: 'app'
+    ui:
+      css: 'static/dashboard.css'
+      script: 'static/dashboard.js'
+      dynamic: 'ui/dashboard.ts'
+      layout: 'full'            # use the whole viewport width
+    api: []
+```
+
+`aihf validate` warns if `layout` is not one of the three presets (an unknown value falls back to
+`'default'`). The setting is per-step, so one workflow can mix a narrow intake form with a full-width
+results dashboard.
+
+### Security: UI assets are scanned at deploy
+
+Your `ui.css` and `ui.script` are **inlined** into the page at render, so the platform treats them as
+first-party code in its origin. They are **scanned once at deploy** (`aihf validate` locally, then the
+deploy gate) for stored-XSS patterns — e.g. `<script>` / `<iframe>` / `javascript:` in CSS, and
+`<script>…</script>` / `document.cookie =` (writes) / `eval(` in client JS. A match **fails the
+deployment**, so keep these files to plain styling and DOM wiring (reading cookies, `addEventListener`,
+`fetch` to the SDK endpoints are all fine). Run `aihf validate .` to catch issues before deploying.
 
 ### Dynamic UI Renderer
 

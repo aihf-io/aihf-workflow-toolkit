@@ -1951,6 +1951,14 @@ declare module '@aihf/platform-sdk' {
     css: string;
     script: string;
     dynamic: string;
+    /**
+     * Optional app-portal layout preset for this step (also applies to magic-link steps).
+     * Controls the usable width of the AIHF frame around your step UI:
+     *   'default' (~1400px, the standard model) | 'wide' (up to 1800px) | 'full' (edge-to-edge).
+     * Auto-sizes down on small screens; the platform top banner is kept in every preset.
+     * Omitted/unknown ⇒ 'default'.
+     */
+    layout?: 'default' | 'wide' | 'full';
   }
 
   export interface WorkflowManifestStepAPIHandler {

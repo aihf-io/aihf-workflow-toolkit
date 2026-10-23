@@ -106,6 +106,53 @@ function getESMEntryPoint(pkgJson: any): string {
   return 'index.js';
 }
 
+
+/**
+ * Scan .js files in dist/src/ and append ".js" to relative import specifiers
+ * that lack a file extension. The platform's embedded-module loader resolves
+ * nested imports by EXACT module path — "../utils/shared" does not match the
+ * registered "utils/shared.js" and fails at runtime with "No such module".
+ * tsc preserves source specifiers verbatim, so we normalise here instead of
+ * forcing ".js" into every TypeScript source import.
+ */
+async function rewriteRelativeSpecifiers(outputPath: string): Promise<number> {
+  const fs = await import('fs/promises');
+  const glob = await import('glob');
+  const srcPath = join(outputPath, 'src');
+
+  const jsFiles = glob.globSync('**/*.js', { cwd: srcPath, ignore: ['_lib/**'] });
+
+  // Relative specifiers only ("./x", "../x"), in static and dynamic imports
+  const staticRelRe = /(from\s+['"])(\.\.?\/[^'"]*?)(['"])/g;
+  const dynamicRelRe = /(import\s*\(\s*['"])(\.\.?\/[^'"]*?)(['"]\s*\))/g;
+
+  let rewriteCount = 0;
+
+  for (const file of jsFiles) {
+    const filePath = join(srcPath, file);
+    const content = await fs.readFile(filePath, 'utf-8');
+    let modified = false;
+
+    const rewriter = (_match: string, prefix: string, specifier: string, suffix: string): string => {
+      // Already has a known extension — leave untouched
+      if (/\.(js|mjs|cjs|json|wasm)$/.test(specifier)) return _match;
+      modified = true;
+      return `${prefix}${specifier}.js${suffix}`;
+    };
+
+    const newContent = content
+      .replace(staticRelRe, rewriter)
+      .replace(dynamicRelRe, rewriter);
+
+    if (modified) {
+      await fs.writeFile(filePath, newContent, 'utf-8');
+      rewriteCount++;
+    }
+  }
+
+  return rewriteCount;
+}
+
 /**
  * Scan .js files in dist/src/ (excluding _lib/) and rewrite bare specifier imports
  * to relative paths pointing into _lib/.
@@ -423,6 +470,14 @@ export async function compileCommand(bundlePath: string, options: CompileOptions
 
     // Vendor npm dependencies into dist/src/_lib/ and rewrite imports
     await vendorDependencies(resolvedPath, outputPath);
+
+    // Normalise relative import specifiers to include .js — deployed bundles
+    // resolve nested imports by exact module name, so extensionless relative
+    // specifiers fail at runtime with "No such module".
+    const relRewrites = await rewriteRelativeSpecifiers(outputPath);
+    if (relRewrites > 0) {
+      console.log(chalk.green(`Normalised relative import specifiers (.js) in ${relRewrites} file${relRewrites === 1 ? '' : 's'}`));
+    }
 
     // Validate compiled output
     console.log(chalk.yellow('Validating compiled output...'));

@@ -153,6 +153,8 @@ infrastructure. Your only deployment action is uploading the ZIP to admin.aihf.i
 | `sdk.utilities` | Platform utilities (slugs, tokens, formatting) |
 | `sdk.auth` | Authentication flows (magic link, OAuth, passkey) |
 | `sdk.notifications` | Send/receive platform notifications (RBAC-enforced) |
+| `sdk.workflows` | Workflow config + version helpers (`getWorkflowConfigHelper`) |
+| `sdk.scanning` | Content-safety / injection scanning of untrusted input |
 
 Full reference: [SDK Reference](./docs/SDK_REFERENCE.md)
 
@@ -166,6 +168,12 @@ These are enforced by `aihf validate` and the platform at runtime:
 4. **Work handlers return `Response` with `{ hasWork: boolean, ... }` JSON** — always include `hasWork`
 5. **`initWorkflow.ts` must be idempotent** — use `CREATE TABLE IF NOT EXISTS`, `INSERT OR IGNORE`
 6. **No direct Cloudflare bindings** — all platform resources go through the SDK
+7. **UI assets (`ui.css` / `ui.script`) are inlined and scanned at deploy** — the platform injects
+   them into the page origin, so they're scanned for stored-XSS (no `<script>`/`<iframe>`/
+   `javascript:` in CSS; no `<script>…</script>`/`document.cookie =` writes/`eval(` in client JS).
+   A match fails the deploy. Keep them to plain styling + DOM wiring; `aihf validate` catches it
+   locally. Use the optional `ui.layout` preset (`default` | `wide` | `full`) to widen the app-portal
+   frame per step — see [Bundle.yaml Reference](./docs/BUNDLE_YAML.md).
 
 ## Further Reading
 
