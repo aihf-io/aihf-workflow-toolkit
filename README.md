@@ -4,8 +4,8 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-> **Install:** `npm install -g github:aihf-io/aihf-workflow-toolkit` — the `aihf` CLI is distributed
-> from this repo (not yet on the npm registry). See [Quick Start](#quick-start).
+> **Install:** the `aihf` CLI ships from this repo (not yet on the npm registry) — clone it,
+> `npm install`, `npm link`. See [Quick Start](#quick-start).
 
 ---
 
@@ -79,14 +79,23 @@ This means:
 
 ### 1. Install the CLI
 
-The `aihf` CLI ships from this GitHub repo (it builds itself on install):
+The `aihf` CLI isn't on the npm registry yet, so install it from this repo. Clone once, then link it
+onto your PATH (requires Node 18+):
 
 ```bash
-npm install -g github:aihf-io/aihf-workflow-toolkit
+git clone https://github.com/aihf-io/aihf-workflow-toolkit.git
+cd aihf-workflow-toolkit
+npm install      # installs deps AND builds the CLI (via the prepare script)
+npm link         # puts the `aihf` command on your PATH
 ```
 
-> Requires Node 18+. Prefer not to install globally? Use it ad-hoc with
-> `npx github:aihf-io/aihf-workflow-toolkit <command>`, or clone + `npm install` + `npm link`.
+`aihf` is now available anywhere. (The first `npm install` prints a few transitive-dependency
+deprecation warnings — harmless.)
+
+> **One-liner alternative** (no clone, installs globally):
+> `npm install -g github:aihf-io/aihf-workflow-toolkit`.
+> Same result but noisier — it builds from source on install. If you previously ran `npm link`,
+> remove it first with `npm uninstall -g @aihf/platform-sdk` to avoid a rename conflict.
 
 ### 2. Create Your First Workflow
 
@@ -425,8 +434,9 @@ This walkthrough takes you from zero to a compiled, deployable workflow bundle. 
 
 ### Step 1: Install and Scaffold
 
+Install the CLI once (see [Quick Start → Install the CLI](#1-install-the-cli)), then scaffold:
+
 ```bash
-npm install -g github:aihf-io/aihf-workflow-toolkit
 aihf init expense-review --template basic-workflow
 cd expense-review
 ```
