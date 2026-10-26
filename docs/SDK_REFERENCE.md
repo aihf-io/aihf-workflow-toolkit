@@ -61,6 +61,29 @@ const entity = await sdk.entities.getCurrentEntity();
 // Returns: AIHFEntity | null
 ```
 
+### getMagicContext()
+
+Identity context of the **current magic-link session**. Use this when a workflow needs to know
+*which* magic session it's acting as — e.g. a multi-entry workflow where different aliases map to
+different roles. `getCurrentEntity()` can't tell you the session is a magic session, nor which alias
+minted the link.
+
+Returns `null` when the current session is **not** a magic session; otherwise the entity id +
+username and the alias the link was minted under. `alias` is `undefined` for a single-use magic link
+(one that carried no alias). The alias is carried in the (tamper-validated) magic token, so it's
+reliable even when the link was minted by one identity for another (cross-entity).
+
+```typescript
+const magic = await sdk.entities.getMagicContext();
+// Returns: { entityId: string; username: string; alias?: string } | null
+
+if (!magic) {
+  // not a magic session — a normal logged-in user
+} else if (magic.alias === 'partner-b-invite') {
+  // this session entered via the partner-b alias — act accordingly
+}
+```
+
 ### getEntity(entityId)
 
 Retrieve a specific entity by ID.

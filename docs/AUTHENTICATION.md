@@ -282,6 +282,78 @@ export async function invokedByAIHF(
 }
 ```
 
+### Magic Link: Multi-Entry Workflow (disambiguate by alias)
+
+When one workflow has several entry points that different people reach via different magic links, a
+step handler usually can't tell *who* it's acting as from `getCurrentEntity()` alone — every
+level-zero magic session looks the same regardless of which link was used. Mint each link with a
+distinct **alias**, then read it back with `sdk.entities.getMagicContext()`.
+
+**Minting side** — e.g. a service account inviting two parties into the same `custody-handoff`
+workflow, each at their own entry step:
+
+```typescript
+// Partner A enters at the 'review' step; partner B at the 'claim' step
+const linkA = await sdk.auth.createMagicLink({
+  entityId: partnerA.entity_id,
+  workflowName: 'custody-handoff',
+  workflowVersion: 1,
+  stepId: 'review',
+  alias: 'partner-a-invite'        // ← names this magic context
+});
+
+const linkB = await sdk.auth.createMagicLink({
+  entityId: partnerB.entity_id,
+  workflowName: 'custody-handoff',
+  workflowVersion: 1,
+  stepId: 'claim',
+  alias: 'partner-b-invite'
+});
+```
+
+**Consuming side** — the step handler branches on the alias the current session arrived through:
+
+```typescript
+import { AIHFPlatform } from '@aihf/platform-sdk';
+
+export async function invokedByAIHF(
+  sdk: AIHFPlatform,
+  workflowName: string,
+  workflowVersion: number,
+  workflowStepId: string,
+  taskId: string,
+  sanitisedInput: string
+): Promise<Response | null> {
+  const magic = await sdk.entities.getMagicContext();
+
+  if (!magic) {
+    // Not a magic session (e.g. a fully logged-in user hit this step directly)
+    return new Response(JSON.stringify({ error: 'This step requires a magic link' }), { status: 403 });
+  }
+
+  // magic = { entityId, username, alias? }
+  switch (magic.alias) {
+    case 'partner-a-invite':
+      // ...act as the reviewing party...
+      break;
+    case 'partner-b-invite':
+      // ...act as the claiming party...
+      break;
+    default:
+      // single-use link (no alias), or an alias this step doesn't expect
+  }
+
+  return new Response(JSON.stringify({ success: true, as: magic.username, via: magic.alias ?? null }), {
+    headers: { 'Content-Type': 'application/json' }
+  });
+}
+```
+
+> `getMagicContext()` returns `null` for non-magic sessions, and `alias` is `undefined` for a
+> single-use magic link (one minted without an `alias`). The alias travels inside the
+> tamper-validated magic token, so it's trustworthy even when one identity mints a link for another
+> (e.g. a service account inviting a new user).
+
 ### OAuth: Google Sign-In with Redirect
 
 ```typescript

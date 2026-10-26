@@ -141,6 +141,15 @@ declare module '@aihf/platform-sdk' {
     /** Get the current session entity */
     getCurrentEntity(): Promise<AIHFEntity | null>;
 
+    /**
+     * Identity context of the CURRENT magic-link session. Use when a workflow needs to know WHICH
+     * magic session it's acting as (e.g. multi-entry workflows where different aliases map to
+     * different roles) — `getCurrentEntity()` can't tell you it's a magic session nor which alias.
+     * Returns `null` if the current session is not a magic session; otherwise the entity id +
+     * username and the alias the link was minted under (`alias` undefined for a single-use link).
+     */
+    getMagicContext(): Promise<{ entityId: string; username: string; alias?: string } | null>;
+
     /** Get entity by ID */
     getEntity(entityId: string): Promise<AIHFEntity | null>;
 
