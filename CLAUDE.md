@@ -183,5 +183,6 @@ These are enforced by `aihf validate` and the platform at runtime:
 - [Prompt Evaluation Guide](./docs/PROMPT_EVAL.md)
 - [SDK Reference](./docs/SDK_REFERENCE.md)
 - [Bundle.yaml Reference](./docs/BUNDLE_YAML.md)
+- [SPA Patterns](./docs/SPA_PATTERNS.md) — landing-page SPA (atomic `workflow-entry` steps) + workflow-UI SPA (multiple sub-routes)
 - [Authentication](./docs/AUTHENTICATION.md)
 - [Payments](./docs/PAYMENTS.md)

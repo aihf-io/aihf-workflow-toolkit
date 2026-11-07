@@ -647,7 +647,7 @@ Generate a magic link for an entity to access a specific workflow step. Requires
 const magicLink = await sdk.auth.createMagicLink({
   entityId: 'ent_abc123',
   workflowName: 'onboarding',
-  workflowVersion: 1,                            // or 'l' for the latest enabled version
+  workflowVersion: 1,                            // or 'l'/'n1'/'n2' for latest / previous / two-back enabled
   stepId: 'verify-email',
   expiresInMinutes: 60,                          // optional
   metadata: { source: 'signup' },                 // optional
@@ -665,10 +665,10 @@ await sdk.emails.send({
 });
 ```
 
-Set `workflowVersion` to a number to pin the link to that exact version, or to `'l'` to target the
-**latest enabled version**. With `'l'`, the link embeds the `/l/` version alias and re-resolves to
-whatever the latest version is at the moment it is redeemed (the step route is resolved from the
-latest version at creation time).
+Set `workflowVersion` to a number to pin the link to that exact version, or to a dynamic alias —
+`'l'` (latest enabled), `'n1'` (previous), or `'n2'` (two back). With an alias, the link embeds the
+matching `/l/`, `/n1/` or `/n2/` version segment and re-resolves to that enabled version at the
+moment it is redeemed (the step route is resolved from the concrete version at creation time).
 
 By default a magic link is **single-use** — the session is terminated the first time it is
 redeemed. Passing an `alias` that matches one of the caller's Entity Aliases (see below) applies

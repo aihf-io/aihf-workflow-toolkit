@@ -327,6 +327,7 @@ function buildOnboardingContent(): string {
 
 ## Related Documentation
 
+- [SPA Patterns](./SPA_PATTERNS.md) — turn this landing page into a SPA that calls atomic `workflow-entry` steps
 - [SDK Reference](./SDK_REFERENCE.md) — Full API for all SDK managers
 - [Bundle.yaml Reference](./BUNDLE_YAML.md) — Route and handler configuration
 - [Getting Started](./GETTING_STARTED.md) — Build your first workflow

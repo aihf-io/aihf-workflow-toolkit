@@ -465,8 +465,8 @@ declare module '@aihf/platform-sdk' {
     createMagicLink(options: {
       entityId: string;
       workflowName: string;
-      /** Workflow version, or `'l'` for the latest enabled version (resolved at click-time). */
-      workflowVersion: number | 'l';
+      /** Workflow version, or an alias — `'l'` latest / `'n1'` previous / `'n2'` two-back enabled (resolved at click-time). */
+      workflowVersion: number | 'l' | 'n1' | 'n2';
       stepId: string;
       expiresInMinutes?: number;
       metadata?: Record<string, any>;
