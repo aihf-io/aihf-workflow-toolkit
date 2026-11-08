@@ -155,6 +155,7 @@ infrastructure. Your only deployment action is uploading the ZIP to admin.aihf.i
 | `sdk.notifications` | Send/receive platform notifications (RBAC-enforced) |
 | `sdk.workflows` | Workflow config + version helpers (`getWorkflowConfigHelper`) |
 | `sdk.scanning` | Content-safety / injection scanning of untrusted input |
+| `sdk.ai` | Inline near-real-time Claude inference (`complete`/`rewrite`/`moderate`); tenant BYOK key |
 
 Full reference: [SDK Reference](./docs/SDK_REFERENCE.md)
 

@@ -31,6 +31,7 @@ declare module '@aihf/platform-sdk' {
     readonly containers: ContainersManager;
     readonly notifications: NotificationManager;
     readonly scanning: ScanningManager;
+    readonly ai: AIManager;
 
     /** Get the current entity from session */
     getSelfEntity(): Promise<AIHFEntity>;
@@ -942,6 +943,81 @@ declare module '@aihf/platform-sdk' {
       findings: ScanResult['findings'];
       operator_notes: string;
     }): Promise<void>;
+  }
+
+  // ============================================================================
+  // AI MANAGER (sdk.ai) — inline near-real-time Claude inference
+  // ============================================================================
+
+  export interface AIUsage {
+    inputTokens: number;
+    outputTokens: number;
+  }
+
+  export interface AICompleteRequest {
+    /** Optional system prompt. The untrusted `prompt` is always sent as a separate user turn. */
+    system?: string;
+    /** User content. Treated as untrusted — scanned for prompt injection before inference. */
+    prompt: string;
+    /** Model id. Defaults to a fast/cheap model (Haiku 4.5). */
+    model?: string;
+    /** Max output tokens (default 1024). */
+    maxTokens?: number;
+    /** Sampling temperature (default 0.3). */
+    temperature?: number;
+    /** When true, requests JSON-only output and parses it into `.json`. */
+    json?: boolean;
+  }
+
+  export interface AICompleteResult {
+    text: string;
+    json?: any;
+    model: string;
+    usage: AIUsage;
+  }
+
+  export interface AIRewriteRequest {
+    /** Untrusted text to transform (may be toxic — that's expected and remediated). */
+    text: string;
+    /** What the rewrite should achieve, e.g. "make civil and non-abusive". */
+    instruction: string;
+    model?: string;
+    maxTokens?: number;
+  }
+
+  export interface AIRewriteResult {
+    text: string;
+    usage: AIUsage;
+  }
+
+  export interface AIModerateRequest {
+    text: string;
+    /** Optional custom categories; defaults to a general harmful-content set. */
+    categories?: string[];
+  }
+
+  export interface AIModerateResult {
+    allowed: boolean;
+    flagged: string[];
+    reason?: string;
+    usage: AIUsage;
+  }
+
+  /**
+   * `sdk.ai` — call Claude inline during a request (near-real-time), e.g. to rewrite or
+   * moderate a message before sending it. Uses the tenant's own Anthropic key (configured in
+   * Admin → Secrets); without one, calls throw a clear "AI not configured" error. Untrusted
+   * input is scanned for prompt injection and rate-limited per the tenant's tier.
+   */
+  export class AIManager {
+    /** Low-level primitive: system + prompt → text (or JSON). */
+    complete(request: AICompleteRequest): Promise<AICompleteResult>;
+
+    /** Rewrite untrusted text to satisfy an instruction (e.g. soften an abusive message). */
+    rewrite(request: AIRewriteRequest): Promise<AIRewriteResult>;
+
+    /** Classify untrusted text against moderation categories (fail-closed). */
+    moderate(request: AIModerateRequest): Promise<AIModerateResult>;
   }
 
   // ============================================================================

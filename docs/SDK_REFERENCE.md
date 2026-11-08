@@ -45,6 +45,7 @@ const self = await sdk.getSelfEntity();
 | `sdk.credentials` | Passwords and full OAuth lifecycle |
 | `sdk.containers` | Sandboxed container environments (Jupyter, Python, Node.js) |
 | `sdk.notifications` | Send and receive platform notifications from workflow code |
+| `sdk.ai` | Inline near-real-time Claude inference (complete / rewrite / moderate) |
 
 ---
 
@@ -1156,6 +1157,59 @@ const notifications = await sdk.notifications.getMyNotifications();
 // Returns: UserNotification[]
 // Each notification has: id, content, senderId, receiverId, senderRole,
 //   recipientRole, taskId?, createdAt, acknowledgedAt?, isDeletedByUser
+```
+
+---
+
+## AIManager (`sdk.ai`)
+
+Inline, near-real-time Claude inference from workflow code — run a model *during* a request
+(e.g. rewrite or moderate a message before sending it). Unlike AI workers (batch/cron), this
+returns synchronously within the handler.
+
+**Prerequisite:** the tenant must have an Anthropic key set in **Admin → Secrets**
+(`anthropic_chat_api_key`). Calls use that key (BYOK, cost-isolated); without one they throw a
+clear "AI not configured" error. Untrusted input is scanned for prompt injection and
+rate-limited per the tenant's tier. Default model is Haiku 4.5 (fast/cheap), overridable.
+
+### rewrite(request)
+
+Transform untrusted text to satisfy an instruction. The message is treated purely as text to
+rewrite — instructions embedded inside it are never followed.
+
+```typescript
+// Soften an abusive co-parent message before emailing it
+const { text } = await sdk.ai.rewrite({
+  text: parentMessage,
+  instruction: "Rewrite to be civil and non-abusive; preserve the practical intent.",
+});
+await sdk.emails.send({ to, subject, bodyHtml: render(text) });
+// Returns: { text: string, usage: { inputTokens, outputTokens } }
+```
+
+### complete(request)
+
+Low-level primitive: `system` + `prompt` → text (or JSON).
+
+```typescript
+const res = await sdk.ai.complete({
+  system: "You extract structured data.",
+  prompt: userText,
+  json: true,          // request JSON-only output + parse into res.json
+  // model?, maxTokens? (default 1024), temperature? (default 0.3)
+});
+// Returns: { text, json?, model, usage }
+```
+
+### moderate(request)
+
+Classify untrusted text against moderation categories. Fail-closed (`allowed:false` if the
+result can't be parsed).
+
+```typescript
+const verdict = await sdk.ai.moderate({ text: userText });
+// Returns: { allowed: boolean, flagged: string[], reason?: string, usage }
+if (!verdict.allowed) { /* block or route to review */ }
 ```
 
 ---

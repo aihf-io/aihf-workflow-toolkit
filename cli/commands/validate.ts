@@ -40,6 +40,7 @@ const VALID_MANAGER_NAMES = [
   'containers',
   'scanning',
   'notifications',
+  'ai',
 ] as const;
 
 // ---------------------------------------------------------------------------
@@ -160,6 +161,11 @@ const VALID_MANAGER_METHODS: Record<string, string[]> = {
     'sendToSelfAliases',
     'getMyNotifications',
   ],
+  ai: [
+    'complete',
+    'rewrite',
+    'moderate',
+  ],
 };
 
 // ---------------------------------------------------------------------------
@@ -197,9 +203,6 @@ const VALID_UTILITY_SUB_MANAGERS: Record<string, string[]> = {
 // Deprecated / incorrect patterns that should be flagged
 // ---------------------------------------------------------------------------
 const DEPRECATED_PATTERNS: Array<{ pattern: RegExp; message: string }> = [
-  // Wrong manager name
-  { pattern: /\.ai\b/, message: "Manager 'ai' does not exist on AIHFPlatform. Use the correct manager name (e.g. entities, tasks, workflows, database, etc.)." },
-
   // Entity methods
   { pattern: /\.entities\.getInitiator\b/, message: "entities.getInitiator() does not exist. Use entities.getCurrentEntity() instead." },
   { pattern: /\.entities\.searchEntities\b/, message: "entities.searchEntities() does not exist. Use entities.findByUsername() for lookup by username." },
